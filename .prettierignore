@@ -1,0 +1,27 @@
+# Dependency directories
+node_modules/
+.next/
+dist/
+build/
+
+# Lock files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Environment variables
+.env
+.env.*
+
+# Output of serverless deployments
+.vercel/
+.netlify/
+
+# Cache and IDE settings
+.cache/
+.vscode/
+*.log
+
+# Operating system files
+.DS_Store
+Thumbs.db
