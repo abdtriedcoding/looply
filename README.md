@@ -1,36 +1,38 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Looply
 
-## Getting Started
+The Open-Source Platform for Team Collaboration & Project Management
 
-First, run the development server:
+## What is Looply?
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+**Looply** is an open-source productivity suite for modern teams. It combines messaging (Slack-like), task management (Trello/Linear-like), docs (Notion-like), and collaboration tools into one unified workspace. Built for teams that want full control, customization, and ownership over their stack.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Why Looply?
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Modern work is broken.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+You get a Slack message linking to a Confluence doc to prep for a Zoom meeting.  
+You take notes in Notion, update progress in Monday, and move tasks in Trello.  
+By the end of the week, you’ve just shuffled the same info across 10 apps — and paid $15/user for each one.
 
-## Learn More
+**Looply** fixes this mess:
 
-To learn more about Next.js, take a look at the following resources:
+- ✅ One tool for messaging, tasks, docs, and collaboration  
+- 💸 Open-source, self-hosted, no $15/user SaaS traps  
+- 🧠 All-in-one, so teams can focus on real work — not switching tabs  
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Tech Stack
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Looply is built with modern technologies:
 
-## Deploy on Vercel
+- **Frontend**: Next.js (App Router), React, TypeScript, TailwindCSS, Shadcn UI  
+- **Backend**: **Convex** (BaaS for auth, database, file storage, and real-time)  
+- **Database**: Convex (managed document DB)  
+- **Authentication**: Convex Auth  
+- **Storage**: Convex File Storage  
+- **Realtime & Sync**: Powered by Convex's built-in reactivity  
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 🤍 The team
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Built by [Abdullah (abdtriedcoding)](https://github.com/abdtriedcoding)
+
+Follow the journey on [X](https://x.com/abdtriedcoding)
