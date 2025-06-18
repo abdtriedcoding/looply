@@ -3,6 +3,10 @@ import { Outfit } from "next/font/google"
 
 import "./globals.css"
 
+import { ConvexAuthNextjsServerProvider } from "@convex-dev/auth/nextjs/server"
+
+import { ConvexClientProvider } from "@/components/convex-client-provider"
+
 const font = Outfit({
   subsets: ["latin"],
 })
@@ -18,8 +22,12 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
-      <body className={`${font.className} antialiased`}>{children}</body>
-    </html>
+    <ConvexAuthNextjsServerProvider>
+      <html lang="en">
+        <body className={`${font.className} antialiased`}>
+          <ConvexClientProvider>{children}</ConvexClientProvider>
+        </body>
+      </html>
+    </ConvexAuthNextjsServerProvider>
   )
 }
