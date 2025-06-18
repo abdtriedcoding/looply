@@ -1,6 +1,8 @@
 import type { Metadata } from "next"
 import { Outfit } from "next/font/google"
 
+import { ThemeProvider } from "@/components/theme-provider"
+
 import "./globals.css"
 
 import { ConvexAuthNextjsServerProvider } from "@convex-dev/auth/nextjs/server"
@@ -23,9 +25,18 @@ export default function RootLayout({
 }>) {
   return (
     <ConvexAuthNextjsServerProvider>
-      <html lang="en">
+      <html lang="en" suppressHydrationWarning>
         <body className={`${font.className} antialiased`}>
-          <ConvexClientProvider>{children}</ConvexClientProvider>
+          <ConvexClientProvider>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="system"
+              enableSystem
+              disableTransitionOnChange
+            >
+              {children}
+            </ThemeProvider>
+          </ConvexClientProvider>
         </body>
       </html>
     </ConvexAuthNextjsServerProvider>
