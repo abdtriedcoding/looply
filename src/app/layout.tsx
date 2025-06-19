@@ -7,6 +7,8 @@ import "./globals.css"
 
 import { ConvexAuthNextjsServerProvider } from "@convex-dev/auth/nextjs/server"
 
+import { NuqsAdapter } from "nuqs/adapters/next/app"
+
 import { ConvexClientProvider } from "@/components/convex-client-provider"
 
 const font = Outfit({
@@ -34,7 +36,7 @@ export default function RootLayout({
               enableSystem
               disableTransitionOnChange
             >
-              {children}
+              <NuqsAdapter>{children}</NuqsAdapter>
             </ThemeProvider>
           </ConvexClientProvider>
         </body>
