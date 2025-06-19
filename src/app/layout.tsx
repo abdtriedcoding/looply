@@ -1,15 +1,16 @@
 import type { Metadata } from "next"
 import { Outfit } from "next/font/google"
 
+import { Toaster } from "@/components/ui/sonner"
+
 import { ThemeProvider } from "@/components/theme-provider"
 
 import "./globals.css"
 
 import { ConvexAuthNextjsServerProvider } from "@convex-dev/auth/nextjs/server"
 
-import { NuqsAdapter } from "nuqs/adapters/next/app"
-
 import { ConvexClientProvider } from "@/components/convex-client-provider"
+import TanstackProvider from "@/components/tanstack-provider"
 
 const font = Outfit({
   subsets: ["latin"],
@@ -36,7 +37,8 @@ export default function RootLayout({
               enableSystem
               disableTransitionOnChange
             >
-              <NuqsAdapter>{children}</NuqsAdapter>
+              <TanstackProvider>{children}</TanstackProvider>
+              <Toaster richColors position="bottom-right" />
             </ThemeProvider>
           </ConvexClientProvider>
         </body>
