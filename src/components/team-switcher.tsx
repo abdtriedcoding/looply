@@ -1,8 +1,10 @@
 "use client"
 
+import { convexQuery } from "@convex-dev/react-query"
+import { useQuery } from "@tanstack/react-query"
 import * as React from "react"
 
-import { Plus } from "lucide-react"
+import { Loader2, Plus } from "lucide-react"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -12,30 +14,26 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
-export function TeamSwitcher({
-  teams,
-}: {
-  teams: {
-    name: string
-    logo: React.ElementType
-    plan: string
-  }[]
-}) {
-  const [activeTeam, setActiveTeam] = React.useState(teams[0])
+import { useWorkspaceId } from "@/hooks/useWorkspaceId"
+import { api } from "../../convex/_generated/api"
 
-  if (!activeTeam) {
-    return null
-  }
-
+export function TeamSwitcher() {
+  const workspaceId = useWorkspaceId()
+  const { data, isPending } = useQuery(
+    convexQuery(api.workspaces.getWorkspaceById, { id: workspaceId })
+  )
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button size="icon" variant="secondary">
-          AC
+          {isPending ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : (
+            data?.name.charAt(0).toUpperCase()
+          )}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
@@ -45,30 +43,23 @@ export function TeamSwitcher({
         sideOffset={4}
       >
         <DropdownMenuLabel className="text-muted-foreground text-xs">
-          Teams
+          Active Workspace
         </DropdownMenuLabel>
-        {teams.map((team, index) => (
-          <DropdownMenuItem
-            key={team.name}
-            onClick={() => setActiveTeam(team)}
-            className="gap-2 p-2"
-          >
-            <div className="flex size-6 items-center justify-center rounded-md border">
-              <Avatar>
-                <AvatarImage src="" />
-                <AvatarFallback>AC</AvatarFallback>
-              </Avatar>
-            </div>
-            {team.name}
-            <DropdownMenuShortcut>⌘{index + 1}</DropdownMenuShortcut>
-          </DropdownMenuItem>
-        ))}
+        <DropdownMenuItem className="gap-2 p-2">
+            <Avatar className="size-7">
+              <AvatarImage src={data?.imageUrl} />
+              <AvatarFallback>
+                {data?.name.charAt(0).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+          {data?.name}
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem className="gap-2 p-2">
           <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
             <Plus className="size-4" />
           </div>
-          <div className="text-muted-foreground font-medium">Add team</div>
+          <div className="text-muted-foreground font-medium">Add workspace</div>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
