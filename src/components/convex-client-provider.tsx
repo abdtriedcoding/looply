@@ -14,3 +14,5 @@ export function ConvexClientProvider({ children }: { children: ReactNode }) {
     </ConvexAuthNextjsProvider>
   )
 }
+
+export { convex }
