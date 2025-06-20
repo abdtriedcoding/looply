@@ -19,12 +19,15 @@ import {
 
 import { useWorkspaceId } from "@/hooks/useWorkspaceId"
 import { api } from "../../convex/_generated/api"
+import { useCreateWorkspaceModalStore } from "@/features/workspaces/store/useCreateWorkspaceModal"
 
 export function TeamSwitcher() {
   const workspaceId = useWorkspaceId()
   const { data, isPending } = useQuery(
     convexQuery(api.workspaces.getWorkspaceById, { id: workspaceId })
   )
+
+  const { setIsOpen } = useCreateWorkspaceModalStore()
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -45,21 +48,26 @@ export function TeamSwitcher() {
         <DropdownMenuLabel className="text-muted-foreground text-xs">
           Active Workspace
         </DropdownMenuLabel>
-        <DropdownMenuItem className="gap-2 p-2">
-            <Avatar className="size-7">
-              <AvatarImage src={data?.imageUrl} />
-              <AvatarFallback>
+        <DropdownMenuLabel className="p-0 font-normal">
+          <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
+            <Avatar className="h-8 w-8 rounded-lg">
+              <AvatarImage src={data?.imageUrl} alt={data?.name} />
+              <AvatarFallback className="rounded-lg">
                 {data?.name.charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>
-          {data?.name}
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem className="gap-2 p-2">
-          <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
-            <Plus className="size-4" />
+            <div className="grid flex-1 text-left text-sm leading-tight">
+              <span className="truncate font-medium">{data?.name}</span>
+            </div>
           </div>
-          <div className="text-muted-foreground font-medium">Add workspace</div>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          className="gap-2 p-2"
+          onClick={() => setIsOpen(true)}
+        >
+          <Plus />
+          Add workspace
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

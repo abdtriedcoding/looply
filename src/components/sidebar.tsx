@@ -4,10 +4,11 @@ import Link from "next/link"
 
 import { Home, LucideIcon, MessageSquare } from "lucide-react"
 
-import { TeamSwitcher } from "@/components/team-switcher"
+import { Button } from "@/components/ui/button"
 
-import { Hint } from "./hint"
-import { Button } from "./ui/button"
+import { Hint } from "@/components/hint"
+import { NavUser } from "@/components/nav-user"
+import { TeamSwitcher } from "@/components/team-switcher"
 
 export function Sidebar() {
   return (
@@ -15,6 +16,9 @@ export function Sidebar() {
       <TeamSwitcher />
       <SidebarItem icon={Home} label="Home" href="/" isActive />
       <SidebarItem icon={MessageSquare} label="Messages" href="/messages" />
+      <div className="mt-auto">
+        <NavUser />
+      </div>
     </div>
   )
 }

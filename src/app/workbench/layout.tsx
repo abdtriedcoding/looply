@@ -4,6 +4,7 @@ import {
   ResizablePanelGroup,
 } from "@/components/ui/resizable"
 
+import { Modals } from "@/components/modals"
 import { Sidebar } from "@/components/sidebar"
 
 export default function WorkspaceLayout({
@@ -21,7 +22,10 @@ export default function WorkspaceLayout({
           </div>
         </ResizablePanel>
         <ResizableHandle withHandle />
-        <ResizablePanel defaultSize={80}>{children}</ResizablePanel>
+        <ResizablePanel defaultSize={80}>
+          <Modals />
+          {children}
+        </ResizablePanel>
       </ResizablePanelGroup>
     </div>
   )
