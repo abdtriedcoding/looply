@@ -17,22 +17,25 @@ import { useCreateWorkspaceModalStore } from "@/features/workspaces/store/useCre
 
 import { Doc } from "../../convex/_generated/dataModel"
 
+interface TeamSwitcherProps {
+  workspace: Doc<"workspace"> | null
+  isWorkspaceLoading: boolean
+}
+
 export function TeamSwitcher({
   workspace,
-  isPending,
-}: {
-  workspace: Doc<"workspace"> | null
-  isPending: boolean
-}) {
-  const { setIsOpen } = useCreateWorkspaceModalStore()
+  isWorkspaceLoading,
+}: TeamSwitcherProps) {
+  const { setCreateWorkspaceIsOpen } = useCreateWorkspaceModalStore()
+  const fallbackName = workspace?.name?.charAt(0).toUpperCase()
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
+      <DropdownMenuTrigger asChild disabled={isWorkspaceLoading}>
         <Button size="icon" variant="secondary">
-          {isPending ? (
+          {isWorkspaceLoading ? (
             <Loader2 className="size-4 animate-spin" />
           ) : (
-            workspace?.name.charAt(0).toUpperCase()
+            fallbackName
           )}
         </Button>
       </DropdownMenuTrigger>
@@ -50,7 +53,7 @@ export function TeamSwitcher({
             <Avatar className="h-8 w-8 rounded-lg">
               <AvatarImage src={workspace?.imageUrl} alt={workspace?.name} />
               <AvatarFallback className="rounded-lg">
-                {workspace?.name.charAt(0).toUpperCase()}
+                {fallbackName}
               </AvatarFallback>
             </Avatar>
             <div className="grid flex-1 text-left text-sm leading-tight">
@@ -59,7 +62,10 @@ export function TeamSwitcher({
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem className="gap-2 p-2" onClick={() => setIsOpen(true)}>
+        <DropdownMenuItem
+          className="gap-2 p-2"
+          onClick={() => setCreateWorkspaceIsOpen(true)}
+        >
           <Plus />
           Add workspace
         </DropdownMenuItem>

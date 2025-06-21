@@ -27,45 +27,42 @@ import { Input } from "@/components/ui/input"
 
 import { api } from "../../../../convex/_generated/api"
 import { useEditWorkspaceModalStore } from "../store/useEditWorkspaceModal"
-
-export const editWorkspaceSchema = z.object({
-  name: z.string().min(2).max(50),
-  imageUrl: z.string().optional(),
-})
+import { editWorkspaceFormSchema } from "../validation/workspaceSchemas"
 
 export function EditWorkspaceModal() {
-  const { isOpen, setIsOpen, data } = useEditWorkspaceModalStore()
+  const { editWorkspaceIsOpen, setEditWorkspaceIsOpen, editWorkspaceData } =
+    useEditWorkspaceModalStore()
 
   const { mutateAsync, isPending } = useMutation({
     mutationFn: useConvexMutation(api.workspaces.updateWorkspace),
   })
 
-  const form = useForm<z.infer<typeof editWorkspaceSchema>>({
-    resolver: zodResolver(editWorkspaceSchema),
+  const form = useForm<z.infer<typeof editWorkspaceFormSchema>>({
+    resolver: zodResolver(editWorkspaceFormSchema),
     defaultValues: {
-      name: data?.name || "",
-      imageUrl: data?.imageUrl || "",
+      name: editWorkspaceData?.name || "",
+      imageUrl: editWorkspaceData?.imageUrl || "",
     },
   })
 
   useEffect(() => {
-    if (data) {
+    if (editWorkspaceData) {
       form.reset({
-        name: data.name || "",
-        imageUrl: data.imageUrl || "",
+        name: editWorkspaceData.name || "",
+        imageUrl: editWorkspaceData.imageUrl || "",
       })
     }
-  }, [data, form])
+  }, [editWorkspaceData, form])
 
   const handleClose = () => {
-    setIsOpen(false)
+    setEditWorkspaceIsOpen(false)
     form.reset()
   }
 
-  function onSubmit(values: z.infer<typeof editWorkspaceSchema>) {
-    if (!data) return
+  function onSubmit(values: z.infer<typeof editWorkspaceFormSchema>) {
+    if (!editWorkspaceData) return
     const promise = mutateAsync({
-      id: data._id,
+      id: editWorkspaceData._id,
       ...values,
     })
     toast.promise(promise, {
@@ -81,7 +78,7 @@ export function EditWorkspaceModal() {
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
+    <Dialog open={editWorkspaceIsOpen} onOpenChange={handleClose}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Edit Workspace</DialogTitle>
