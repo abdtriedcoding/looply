@@ -81,3 +81,16 @@ export const updateWorkspace = mutation({
     return workspaceId
   },
 })
+
+export const deleteWorkspace = mutation({
+  args: {
+    id: v.id("workspace"),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx)
+    if (!userId) return
+
+    const workspaceId = await ctx.db.delete(args.id)
+    return workspaceId
+  },
+})
