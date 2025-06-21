@@ -26,14 +26,24 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
-import { api } from "../../convex/_generated/api"
+import { useEditWorkspaceModalStore } from "@/features/workspaces/store/useEditWorkspaceModal"
 
-export function NavUser() {
+import { api } from "../../convex/_generated/api"
+import { Doc } from "../../convex/_generated/dataModel"
+
+export function NavUser({
+  workspace,
+  isWorkspaceLoading,
+}: {
+  workspace: Doc<"workspace"> | null
+  isWorkspaceLoading: boolean
+}) {
   const { data, isPending } = useQuery(convexQuery(api.currentuser.user, {}))
   const { signOut } = useAuthActions()
   const router = useRouter()
+  const { setIsOpen, setData } = useEditWorkspaceModalStore()
 
-  if (isPending)
+  if (isWorkspaceLoading || isPending)
     return (
       <Button size="icon" variant="info">
         <Loader2 className="size-4 animate-spin" />
@@ -82,7 +92,12 @@ export function NavUser() {
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => {
+              setIsOpen(true)
+              setData(workspace)
+            }}
+          >
             <BadgeCheck className="mr-2 h-4 w-4" />
             Edit Workspace
           </DropdownMenuItem>

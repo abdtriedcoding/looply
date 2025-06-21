@@ -34,7 +34,7 @@ export const createWorkspaceSchema = z.object({
 })
 
 export function CreateWorkspaceModal({
-  isModalClosable,
+  isModalClosable = true,
 }: {
   isModalClosable: boolean
 }) {
@@ -78,7 +78,7 @@ export function CreateWorkspaceModal({
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
             <FormField
               control={form.control}
               name="name"
