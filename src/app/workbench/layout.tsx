@@ -4,6 +4,8 @@ import {
   ResizablePanelGroup,
 } from "@/components/ui/resizable"
 
+import { WorkspaceSidebar } from "@/features/workspaces/components/workspace-sidebar"
+
 import { Modals } from "@/components/modals"
 import { Sidebar } from "@/components/sidebar"
 
@@ -16,13 +18,11 @@ export default function WorkspaceLayout({
     <div className="flex h-screen">
       <Sidebar />
       <ResizablePanelGroup direction="horizontal">
-        <ResizablePanel defaultSize={20} minSize={11} maxSize={30}>
-          <div className="flex h-full items-center justify-center p-6">
-            <span className="font-semibold">Sidebar</span>
-          </div>
+        <ResizablePanel defaultSize={25} minSize={20} maxSize={30}>
+          <WorkspaceSidebar />
         </ResizablePanel>
         <ResizableHandle withHandle />
-        <ResizablePanel defaultSize={80}>
+        <ResizablePanel defaultSize={75}>
           <Modals />
           {children}
         </ResizablePanel>

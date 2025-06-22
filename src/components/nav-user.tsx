@@ -1,10 +1,10 @@
 "use client"
 
+import { useRouter } from "next/navigation"
+
 import { useAuthActions } from "@convex-dev/auth/react"
 import { convexQuery } from "@convex-dev/react-query"
 import { useQuery } from "@tanstack/react-query"
-import { useRouter } from "next/navigation"
-
 import {
   BadgeCheck,
   Loader2,

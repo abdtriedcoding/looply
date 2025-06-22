@@ -1,9 +1,9 @@
 "use client"
 
-import { convexQuery } from "@convex-dev/react-query"
-import { useQuery } from "@tanstack/react-query"
 import Link from "next/link"
 
+import { convexQuery } from "@convex-dev/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { Home, LucideIcon, MessageSquare } from "lucide-react"
 
 import { Button } from "@/components/ui/button"

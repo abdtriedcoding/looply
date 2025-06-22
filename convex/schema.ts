@@ -1,5 +1,4 @@
 import { authTables } from "@convex-dev/auth/server"
-
 import { defineSchema, defineTable } from "convex/server"
 import { v } from "convex/values"
 
@@ -19,6 +18,10 @@ const schema = defineSchema({
     .index("by_user_id", ["userId"])
     .index("by_workspace_id", ["workspaceId"])
     .index("by_workspace_id_user_id", ["workspaceId", "userId"]),
+  channel: defineTable({
+    name: v.string(),
+    workspaceId: v.id("workspace"),
+  }).index("by_workspace_id", ["workspaceId"]),
 })
 
 export default schema
