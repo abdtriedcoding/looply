@@ -5,6 +5,7 @@ import React, { useEffect, useState } from "react"
 import { CreateWorkspaceModal } from "@/features/workspaces/components/create-workspace-modal"
 import { DeleteWorkspaceModal } from "@/features/workspaces/components/delete-workspace-modal"
 import { EditWorkspaceModal } from "@/features/workspaces/components/edit-workspace-modal"
+import { InviteWorkspaceModal } from "@/features/workspaces/components/invite-workspace-modal"
 
 import { useWorkspaceId } from "@/hooks/useWorkspaceId"
 
@@ -27,6 +28,7 @@ export function Modals(): React.ReactNode {
       <CreateWorkspaceModal isModalClosable={isModalClosable} />
       <EditWorkspaceModal />
       <DeleteWorkspaceModal />
+      <InviteWorkspaceModal />
     </>
   )
 }
