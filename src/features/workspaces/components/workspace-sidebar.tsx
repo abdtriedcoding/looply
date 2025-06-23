@@ -1,5 +1,6 @@
 "use client"
 
+import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 
 import { convexQuery } from "@convex-dev/react-query"
@@ -27,6 +28,7 @@ import { useCreateChannelModalStore } from "@/features/channels/store/useCreateC
 import { useDeleteChannelModalStore } from "@/features/channels/store/useDeleteChannelModal"
 import { useEditChannelModalStore } from "@/features/channels/store/useEditChannelModal"
 
+import { useChannelId } from "@/hooks/useChannelId"
 import { useWorkspaceId } from "@/hooks/useWorkspaceId"
 
 import { api } from "../../../../convex/_generated/api"
@@ -135,7 +137,9 @@ export const WorkspaceSidebar = () => {
 }
 
 export function AllChannels() {
+  const router = useRouter()
   const workspaceId = useWorkspaceId()
+  const channelId = useChannelId()
   const { setEditChannelIsOpen } = useEditChannelModalStore()
   const { setDeleteChannelIsOpen } = useDeleteChannelModalStore()
 
@@ -173,8 +177,11 @@ export function AllChannels() {
           className="group relative flex items-center justify-between gap-2"
         >
           <Button
-            variant="secondary"
-            className="hover:bg-accent/80 h-10 w-full justify-start gap-3 rounded-lg px-3 py-2 transition-colors"
+            onClick={() =>
+              router.push(`/workbench/${workspaceId}/channel/${item._id}`)
+            }
+            variant={channelId === item._id ? "secondary" : "ghost"}
+            className="h-10 w-full cursor-pointer justify-start gap-3 rounded-lg px-3 py-2"
           >
             <HashIcon className="text-muted-foreground h-5 w-5" />
             <span className="text-muted-foreground truncate font-medium">
