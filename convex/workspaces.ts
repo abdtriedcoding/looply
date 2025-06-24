@@ -1,5 +1,5 @@
 import { getAuthUserId } from "@convex-dev/auth/server"
-import { v } from "convex/values"
+import { ConvexError, v } from "convex/values"
 
 import {
   createWorkspaceArgsSchema,
@@ -59,6 +59,21 @@ export const createWorkspace = mutation({
 })
 
 export const getWorkspaceById = query({
+  args: {
+    id: v.id("workspace"),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx)
+    if (userId === null) {
+      return null
+    }
+
+    const workspace = await ctx.db.get(args.id)
+    return workspace
+  },
+})
+
+export const getWorkspaceInfo = query({
   args: {
     id: v.id("workspace"),
   },
@@ -134,13 +149,13 @@ export const joinWorkspace = mutation({
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx)
-    if (!userId) return { error: "Not authenticated" }
+    if (!userId) throw new ConvexError("Not authenticated")
 
     const workspace = await ctx.db.get(args.id)
-    if (!workspace) return { error: "Workspace not found" }
+    if (!workspace) throw new ConvexError("Workspace not found")
 
     if (workspace.joinCode !== args.joinCode)
-      return { error: "Invalid join code" }
+      throw new ConvexError("Invalid join code")
 
     const isAlreadyMember = await ctx.db
       .query("workspaceMember")
@@ -149,7 +164,7 @@ export const joinWorkspace = mutation({
       )
       .unique()
 
-    if (isAlreadyMember) return { error: "Already a member" }
+    if (isAlreadyMember) throw new ConvexError("Already a member")
 
     const workspaceId = await ctx.db.insert("workspaceMember", {
       workspaceId: args.id,
