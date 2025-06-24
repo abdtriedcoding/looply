@@ -15,6 +15,7 @@ import type {
 } from "convex/server";
 import type * as auth from "../auth.js";
 import type * as channels from "../channels.js";
+import type * as currentMember from "../currentMember.js";
 import type * as currentuser from "../currentuser.js";
 import type * as http from "../http.js";
 import type * as workspaces from "../workspaces.js";
@@ -30,6 +31,7 @@ import type * as workspaces from "../workspaces.js";
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   channels: typeof channels;
+  currentMember: typeof currentMember;
   currentuser: typeof currentuser;
   http: typeof http;
   workspaces: typeof workspaces;

@@ -33,7 +33,7 @@ export default function HomePage() {
   if (isWorkspacesLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
-        <Loader2 className="size-6 animate-spin" />
+        <Loader2 className="size-5 animate-spin" />
       </div>
     )
   }
