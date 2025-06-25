@@ -2,26 +2,35 @@ import { z } from "zod"
 
 import { Id } from "../../../../convex/_generated/dataModel"
 
-const nameSchema = z.string().min(2).max(50)
-const imageUrlSchema = z.string().optional()
+// --- Atomic field schemas ---
+export const workspaceNameSchema = z.string().min(2).max(50)
+export const workspaceImageUrlSchema = z.string().optional()
+export const workspaceIdSchema = z.custom<Id<"workspace">>()
 
 // --- Frontend form schemas ---
-export const createWorkspaceFormSchema = z.object({ name: nameSchema })
-
-export const editWorkspaceFormSchema = z.object({
-  name: nameSchema,
-  imageUrl: imageUrlSchema,
+export const createWorkspaceFormSchema = z.object({
+  name: workspaceNameSchema,
 })
 
-// --- Backend args schemas ---
+export const editWorkspaceFormSchema = z.object({
+  name: workspaceNameSchema,
+  imageUrl: workspaceImageUrlSchema,
+})
+
+// --- Backend args schemas (for API/mutations) ---
 export const createWorkspaceArgsSchema = createWorkspaceFormSchema
 
-export const updateWorkspaceArgsSchema = z.object({
-  id: z.custom<Id<"workspace">>(),
-  name: nameSchema,
-  imageUrl: imageUrlSchema,
+export const updateWorkspaceArgsSchema = editWorkspaceFormSchema.extend({
+  workspaceId: workspaceIdSchema,
 })
 
 export const deleteWorkspaceArgsSchema = z.object({
-  id: z.custom<Id<"workspace">>(),
+  workspaceId: workspaceIdSchema,
 })
+
+// --- Types for type safety ---
+export type CreateWorkspaceForm = z.infer<typeof createWorkspaceFormSchema>
+export type EditWorkspaceForm = z.infer<typeof editWorkspaceFormSchema>
+export type CreateWorkspaceArgs = z.infer<typeof createWorkspaceArgsSchema>
+export type UpdateWorkspaceArgs = z.infer<typeof updateWorkspaceArgsSchema>
+export type DeleteWorkspaceArgs = z.infer<typeof deleteWorkspaceArgsSchema>
