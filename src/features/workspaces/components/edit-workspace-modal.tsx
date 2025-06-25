@@ -1,11 +1,5 @@
-import { useConvexMutation } from "@convex-dev/react-query"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useMutation } from "@tanstack/react-query"
-import { useEffect } from "react"
-
 import { useForm } from "react-hook-form"
-import { toast } from "sonner"
-import { z } from "zod"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -25,66 +19,60 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 
-import { api } from "../../../../convex/_generated/api"
-import { useEditWorkspaceModalStore } from "../store/useEditWorkspaceModal"
-import { editWorkspaceFormSchema } from "../validation/workspaceSchemas"
+import { useEditWorkspace } from "@/features/workspaces/api/useEditWorkspace"
+import {
+  EditWorkspaceForm,
+  editWorkspaceFormSchema,
+} from "@/features/workspaces/validation/workspaceSchemas"
 
-export function EditWorkspaceModal() {
-  const { editWorkspaceIsOpen, setEditWorkspaceIsOpen, editWorkspaceData } =
-    useEditWorkspaceModalStore()
+import { Doc } from "../../../../convex/_generated/dataModel"
 
-  const { mutateAsync, isPending } = useMutation({
-    mutationFn: useConvexMutation(api.workspaces.updateWorkspace),
-  })
-
-  const form = useForm<z.infer<typeof editWorkspaceFormSchema>>({
+export function EditWorkspaceModal({
+  open,
+  onOpenChange,
+  workspace,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  workspace: Doc<"workspace">
+}) {
+  const form = useForm<EditWorkspaceForm>({
     resolver: zodResolver(editWorkspaceFormSchema),
     defaultValues: {
-      name: editWorkspaceData?.name || "",
-      imageUrl: editWorkspaceData?.imageUrl || "",
+      name: workspace.name,
+      imageUrl: workspace.imageUrl,
     },
   })
 
-  useEffect(() => {
-    if (editWorkspaceData) {
-      form.reset({
-        name: editWorkspaceData.name || "",
-        imageUrl: editWorkspaceData.imageUrl || "",
-      })
-    }
-  }, [editWorkspaceData, form])
-
-  const handleClose = () => {
-    setEditWorkspaceIsOpen(false)
+  function handleClose() {
     form.reset()
+    onOpenChange(false)
   }
 
-  function onSubmit(values: z.infer<typeof editWorkspaceFormSchema>) {
-    if (!editWorkspaceData) return
-    const promise = mutateAsync({
-      id: editWorkspaceData._id,
-      ...values,
-    })
-    toast.promise(promise, {
-      loading: "Loading...",
-      success: () => {
-        handleClose()
-        return `${values.name} workspace has been updated`
-      },
-      error: () => {
-        return "Failed to update workspace"
-      },
-    })
+  const { mutate: updateWorkspace, isPending: isUpdateWorkspacePending } =
+    useEditWorkspace()
+
+  function handleSubmit(values: EditWorkspaceForm) {
+    updateWorkspace(
+      { ...values, workspaceId: workspace._id },
+      { onSuccess: () => handleClose() }
+    )
   }
 
   return (
-    <Dialog open={editWorkspaceIsOpen} onOpenChange={handleClose}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Edit Workspace</DialogTitle>
+          <DialogTitle>
+            Update workspace{" "}
+            <span className="text-primary">{workspace.name}</span>
+          </DialogTitle>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+          <form
+            onSubmit={form.handleSubmit(handleSubmit)}
+            className="space-y-5"
+          >
             <FormField
               control={form.control}
               name="name"
@@ -115,8 +103,8 @@ export function EditWorkspaceModal() {
               )}
             />
             <DialogFooter>
-              <Button type="submit" disabled={isPending}>
-                Save Changes
+              <Button type="submit" disabled={isUpdateWorkspacePending}>
+                {isUpdateWorkspacePending ? "Updating..." : "Save Changes"}
               </Button>
             </DialogFooter>
           </form>

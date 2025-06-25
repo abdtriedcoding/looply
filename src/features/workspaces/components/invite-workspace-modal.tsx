@@ -1,7 +1,7 @@
-import { convexQuery, useConvexMutation } from "@convex-dev/react-query"
-import { useMutation, useQuery } from "@tanstack/react-query"
 import { useState } from "react"
 
+import { useConvexMutation } from "@convex-dev/react-query"
+import { useMutation } from "@tanstack/react-query"
 import { Check, Copy, RefreshCcw } from "lucide-react"
 import { toast } from "sonner"
 
@@ -16,46 +16,44 @@ import {
 } from "@/components/ui/dialog"
 
 import { useOrigin } from "@/hooks/useOrigin"
-import { useWorkspaceId } from "@/hooks/useWorkspaceId"
+
+import { handleConvexMutationError } from "@/lib/convex-mutation-error"
 
 import { api } from "../../../../convex/_generated/api"
-import { useInviteWorkspaceModalStore } from "../store/useInviteWorkspaceModal"
+import { Doc } from "../../../../convex/_generated/dataModel"
 
-export function InviteWorkspaceModal() {
+export function InviteWorkspaceModal({
+  open,
+  onOpenChange,
+  workspace,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  workspace: Doc<"workspace">
+}) {
   const origin = useOrigin()
-  const workspaceId = useWorkspaceId()
   const [isCopied, setIsCopied] = useState(false)
-  const { inviteWorkspaceIsOpen, setInviteWorkspaceIsOpen } =
-    useInviteWorkspaceModalStore()
 
-  const { data } = useQuery({
-    ...convexQuery(api.workspaces.getWorkspaceById, { id: workspaceId }),
-    initialData: null,
-  })
-
-  const { mutateAsync, isPending } = useMutation({
-    mutationFn: useConvexMutation(api.workspaces.updateWorkspaceJoinCode),
-  })
-
-  const handleNewCode = async () => {
-    if (!data) return
-    const promise = mutateAsync({
-      id: data._id,
-    })
-    toast.promise(promise, {
-      loading: "Loading...",
-      success: () => {
-        return "New code generated"
+  const { mutate: updateJoinCode, isPending: isUpdateJoinCodePending } =
+    useMutation({
+      mutationFn: useConvexMutation(api.workspaces.updateWorkspaceJoinCode),
+      onError: (err: Error) => {
+        toast.error(
+          handleConvexMutationError(err, "Failed to generate new code")
+        )
       },
-      error: () => {
-        return "Failed to generate new code"
+      onSuccess: () => {
+        toast.success("New code generated")
       },
     })
+
+  const handleNewCode = () => {
+    updateJoinCode({ workspaceId: workspace._id })
   }
 
   const handleCopy = async () => {
     setIsCopied(true)
-    const link = `${origin}/join/${workspaceId}`
+    const link = `${origin}/join/${workspace._id}`
     await navigator.clipboard.writeText(link)
     toast.success("Link copied to clipboard")
     setTimeout(() => {
@@ -64,22 +62,21 @@ export function InviteWorkspaceModal() {
   }
 
   return (
-    <Dialog
-      open={inviteWorkspaceIsOpen}
-      onOpenChange={setInviteWorkspaceIsOpen}
-    >
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
             Invite people to{" "}
-            <span className="text-primary font-semibold">{data?.name}</span>
+            <span className="text-primary font-semibold">{workspace.name}</span>
           </DialogTitle>
           <DialogDescription>
             Use the code below to invite people to your workspace
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col items-center justify-center gap-y-4 py-10">
-          <p className="text-4xl font-bold tracking-widest">{data?.joinCode}</p>
+          <p className="text-4xl font-bold tracking-widest">
+            {workspace.joinCode}
+          </p>
           <Button
             variant="ghost"
             size="sm"
@@ -90,7 +87,7 @@ export function InviteWorkspaceModal() {
             {isCopied ? (
               <Check className="ml-2 size-4 text-emerald-500" />
             ) : (
-              <Copy className="ml-2 size-4" />
+              <Copy className="text-muted-foreground ml-2 size-4" />
             )}
           </Button>
         </div>
@@ -98,10 +95,10 @@ export function InviteWorkspaceModal() {
           <Button
             onClick={handleNewCode}
             variant="outline"
-            disabled={isPending}
+            disabled={isUpdateJoinCodePending}
           >
-            New code
-            <RefreshCcw className="ml-2 size-4" />
+            {isUpdateJoinCodePending ? "Generating..." : "New code"}
+            <RefreshCcw className="text-muted-foreground ml-2 size-4" />
           </Button>
           <DialogClose asChild>
             <Button>Close</Button>
