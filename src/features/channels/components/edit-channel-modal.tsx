@@ -1,11 +1,7 @@
 "use client"
 
-import { convexQuery, useConvexMutation } from "@convex-dev/react-query"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useMutation, useQuery } from "@tanstack/react-query"
 import { useForm } from "react-hook-form"
-import { toast } from "sonner"
-import { z } from "zod"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -26,62 +22,59 @@ import {
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 
-import { useChannelId } from "@/hooks/useChannelId"
-import { useWorkspaceId } from "@/hooks/useWorkspaceId"
+import { useEditChannel } from "@/features/channels/api/useEditChannel"
+import {
+  EditChannelForm,
+  editChannelFormSchema,
+} from "@/features/channels/validation/channelSchemas"
 
-import { api } from "../../../../convex/_generated/api"
-import { useEditChannelModalStore } from "../store/useEditChannelModal"
-import { editChannelFormSchema } from "../validation/channelSchemas"
+import { Doc } from "../../../../convex/_generated/dataModel"
 
-export function EditChannelModal() {
-  const { editChannelIsOpen, setEditChannelIsOpen } = useEditChannelModalStore()
+export function EditChannelModal({
+  open,
+  onOpenChange,
+  channel,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  channel: Doc<"channel">
+}) {
+  const { mutate: updateChannel, isPending: isUpdateChannelPending } =
+    useEditChannel()
 
-  const workspaceId = useWorkspaceId()
-  const channelId = useChannelId()
-
-  const { data } = useQuery(
-    convexQuery(api.channels.getChannelById, { workspaceId, channelId })
-  )
-
-  const { mutateAsync, isPending: isUpdating } = useMutation({
-    mutationFn: useConvexMutation(api.channels.updateChannel),
-  })
-
-  const form = useForm<z.infer<typeof editChannelFormSchema>>({
+  const form = useForm<EditChannelForm>({
     resolver: zodResolver(editChannelFormSchema),
     defaultValues: {
-      name: data?.name || "",
-      description: data?.description || "",
+      name: channel.name,
+      description: channel.description,
     },
   })
 
-  async function onSubmit(values: z.infer<typeof editChannelFormSchema>) {
-    try {
-      const result = await mutateAsync({ ...values, workspaceId, channelId })
-      if (result && typeof result === "object" && "error" in result) {
-        toast.error(result.error)
-        return
-      }
-      toast.success(`${values.name} channel has been updated`)
-      handleClose()
-    } catch {
-      toast.error("Failed to update channel")
-    }
+  function handleClose() {
+    form.reset()
+    onOpenChange(false)
   }
 
-  const handleClose = () => {
-    form.reset()
-    setEditChannelIsOpen(false)
+  function handleSubmit(values: EditChannelForm) {
+    updateChannel(
+      { ...values, workspaceId: channel.workspaceId, channelId: channel._id },
+      { onSuccess: () => handleClose() }
+    )
   }
 
   return (
-    <Dialog open={editChannelIsOpen} onOpenChange={handleClose}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Edit Channel</DialogTitle>
+          <DialogTitle>
+            Update channel <span className="text-primary">{channel.name}</span>
+          </DialogTitle>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form
+            onSubmit={form.handleSubmit(handleSubmit)}
+            className="space-y-4"
+          >
             <FormField
               control={form.control}
               name="name"
@@ -99,7 +92,6 @@ export function EditChannelModal() {
                 </FormItem>
               )}
             />
-
             <FormField
               control={form.control}
               name="description"
@@ -122,10 +114,13 @@ export function EditChannelModal() {
                 </FormItem>
               )}
             />
-
             <DialogFooter className="pt-2">
-              <Button type="submit" disabled={isUpdating} className="w-full">
-                {isUpdating ? "Updating..." : "Update Channel"}
+              <Button
+                type="submit"
+                disabled={isUpdateChannelPending}
+                className="w-full"
+              >
+                {isUpdateChannelPending ? "Updating..." : "Update Channel"}
               </Button>
             </DialogFooter>
           </form>

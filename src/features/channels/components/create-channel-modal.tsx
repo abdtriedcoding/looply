@@ -1,9 +1,5 @@
-import { useConvexMutation } from "@convex-dev/react-query"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useMutation } from "@tanstack/react-query"
 import { useForm } from "react-hook-form"
-import { toast } from "sonner"
-import { z } from "zod"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -24,23 +20,26 @@ import {
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 
-import { useCreateChannelModalStore } from "@/features/channels/store/useCreateChannelModal"
-import { createChannelFormSchema } from "@/features/channels/validation/channelSchemas"
+import { useCreateChannel } from "@/features/channels/api/useCreateChannel"
+import {
+  CreateChannelForm,
+  createChannelFormSchema,
+} from "@/features/channels/validation/channelSchemas"
 
 import { useWorkspaceId } from "@/hooks/useWorkspaceId"
 
-import { api } from "../../../../convex/_generated/api"
-
-export function CreateChannelModal() {
+export function CreateChannelModal({
+  open,
+  onOpenChange,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+}) {
   const workspaceId = useWorkspaceId()
-  const { createChannelIsOpen, setCreateChannelIsOpen } =
-    useCreateChannelModalStore()
+  const { mutate: createChannel, isPending: isCreateChannelPending } =
+    useCreateChannel()
 
-  const { mutateAsync, isPending } = useMutation({
-    mutationFn: useConvexMutation(api.channels.createChannel),
-  })
-
-  const form = useForm<z.infer<typeof createChannelFormSchema>>({
+  const form = useForm<CreateChannelForm>({
     resolver: zodResolver(createChannelFormSchema),
     defaultValues: {
       name: "",
@@ -48,34 +47,31 @@ export function CreateChannelModal() {
     },
   })
 
-  async function onSubmit(values: z.infer<typeof createChannelFormSchema>) {
-    try {
-      const result = await mutateAsync({ ...values, workspaceId })
-      if (result && typeof result === "object" && "error" in result) {
-        toast.error(result.error)
-        return
-      }
-      toast.success(`${values.name} channel has been added`)
-      handleClose()
-    } catch {
-      toast.error("Failed to create channel")
-    }
+  function handleClose() {
+    form.reset()
+    onOpenChange(false)
   }
 
-  const handleClose = () => {
-    form.reset()
-    setCreateChannelIsOpen(false)
+  function handleSubmit(values: CreateChannelForm) {
+    createChannel(
+      { ...values, workspaceId },
+      {
+        onSuccess: () => handleClose(),
+      }
+    )
   }
 
   return (
-    <Dialog open={createChannelIsOpen} onOpenChange={handleClose}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="text-lg">Create Channel</DialogTitle>
         </DialogHeader>
-
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form
+            onSubmit={form.handleSubmit(handleSubmit)}
+            className="space-y-4"
+          >
             <FormField
               control={form.control}
               name="name"
@@ -93,7 +89,6 @@ export function CreateChannelModal() {
                 </FormItem>
               )}
             />
-
             <FormField
               control={form.control}
               name="description"
@@ -116,10 +111,13 @@ export function CreateChannelModal() {
                 </FormItem>
               )}
             />
-
             <DialogFooter className="pt-2">
-              <Button type="submit" disabled={isPending} className="w-full">
-                {isPending ? "Creating..." : "Create Channel"}
+              <Button
+                type="submit"
+                disabled={isCreateChannelPending}
+                className="w-full"
+              >
+                {isCreateChannelPending ? "Creating..." : "Create Channel"}
               </Button>
             </DialogFooter>
           </form>
