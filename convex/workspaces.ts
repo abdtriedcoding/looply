@@ -1,6 +1,10 @@
 import { getAuthUserId } from "@convex-dev/auth/server"
 
-import { query } from "./_generated/server"
+import { v } from "convex/values"
+
+import { createWorkspaceSchema } from "../src/features/workspaces/components/create-workspace-modal"
+import { generateWorkspaceCode } from "../src/lib/generate-join-code"
+import { mutation, query } from "./_generated/server"
 
 export const getWorkspaces = query({
   handler: async (ctx) => {
@@ -15,5 +19,26 @@ export const getWorkspaces = query({
       .order("desc")
       .collect()
     return workspaces
+  },
+})
+
+export const createWorkspace = mutation({
+  args: {
+    name: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx)
+    if (!userId) return
+
+    const result = createWorkspaceSchema.safeParse(args)
+
+    if (!result.success) return
+
+    const workspaceId = await ctx.db.insert("workspace", {
+      name: args.name,
+      userId,
+      joinCode: generateWorkspaceCode(),
+    })
+    return workspaceId
   },
 })
