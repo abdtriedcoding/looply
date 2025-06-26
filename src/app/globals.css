@@ -162,7 +162,35 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* TipTap Editor Styles */
+.ProseMirror.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: hsl(var(--muted-foreground));
+  pointer-events: none;
+  height: 0;
+}
+
+.ProseMirror.is-editor-empty:first-child {
+  position: relative;
+}
+
+.ProseMirror.is-editor-empty:first-child::before {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  color: hsl(var(--muted-foreground));
+  pointer-events: none;
+  user-select: none;
+}
+
+.messages-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #dcdcdc #f8f8f8;
 }

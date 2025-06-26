@@ -12,6 +12,7 @@ import { Editor } from "@/components/editor"
 import { Button } from "@/components/ui/button"
 
 import { ChannelHeader } from "@/features/channels/components/channel-header"
+import { MessageList } from "@/features/channels/components/message-list"
 
 import { useChannelId } from "@/hooks/useChannelId"
 import { useWorkspaceId } from "@/hooks/useWorkspaceId"
@@ -40,11 +41,15 @@ export default function ChannelPage() {
       mutationFn: useConvexMutation(api.messages.createMessage),
     })
 
-  const { data: messagesData, isPending: isMessagesLoading } = useQuery(
+  const {
+    data: messagesData,
+    isPending: isMessagesLoading,
+    error: messagesError,
+  } = useQuery(
     convexQuery(api.messages.getMessages, { workspaceId, channelId })
   )
 
-  const handleSend = async (content: string, files: File[]) => {
+  const handleSend = async (content: string | undefined, files: File[]) => {
     let uploadedStorageIds: Id<"_storage">[] = []
 
     if (files.length > 0) {
@@ -64,7 +69,7 @@ export default function ChannelPage() {
     })
   }
 
-  if (isChannelPending) {
+  if (isChannelPending || isMessagesLoading) {
     return (
       <div className="flex h-full items-center justify-center">
         <Loader2 className="text-muted-foreground size-4 animate-spin" />
@@ -85,14 +90,29 @@ export default function ChannelPage() {
     )
   }
 
-  return (
-    <div className="flex min-h-screen flex-col">
-      <ChannelHeader channel={channel} />
-      <div className="flex-1 overflow-y-auto">
-        {JSON.stringify(messagesData)}
+  if (messagesError || !messagesData) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-2">
+        <Button size="icon" variant="destructive">
+          <TriangleAlert className="h-full w-full" />
+        </Button>
+        <span className="text-muted-foreground text-sm font-medium">
+          Messages not found
+        </span>
       </div>
+    )
+  }
 
-      <Editor placeholder={`Message # ${channel?.name}`} onSend={handleSend} />
+  return (
+    <div className="flex h-screen flex-col">
+      <ChannelHeader channel={channel} />
+      <MessageList messages={messagesData} />
+      <div className="p-2">
+        <Editor
+          placeholder={`Message # ${channel?.name}`}
+          onSend={handleSend}
+        />
+      </div>
     </div>
   )
 }
