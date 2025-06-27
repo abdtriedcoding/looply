@@ -21,6 +21,9 @@ interface EditorProps {
   maxHeight?: string
   onSend?: (content: string | undefined, files: File[]) => void
   initialContent?: string
+  variant?: "create" | "edit"
+  onCancel?: () => void
+  onUpdate?: (content: string | undefined) => void
 }
 
 export function Editor({
@@ -28,6 +31,9 @@ export function Editor({
   maxHeight = "300px",
   onSend,
   initialContent = "",
+  variant = "create",
+  onCancel,
+  onUpdate,
 }: EditorProps) {
   const [isFocused, setIsFocused] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -99,10 +105,28 @@ export function Editor({
     }
   }
 
+  const handleUpdate = () => {
+    const plainText = editor.getText().trim()
+    const htmlContent = editor.getHTML()
+
+    if (plainText && onUpdate) {
+      // Send HTML content if there's text, otherwise send undefined
+      const textToSend = plainText ? htmlContent : undefined
+
+      onUpdate(textToSend)
+      editor.commands.setContent("")
+    }
+  }
+
   const handleKeyDown = (event: React.KeyboardEvent) => {
     if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
       event.preventDefault()
       handleSend()
+    }
+
+    if (event.key === "Escape") {
+      event.preventDefault()
+      onCancel?.()
     }
   }
 
@@ -117,7 +141,7 @@ export function Editor({
         onChange={handleFileUpload}
       />
 
-      <FileUploadErrors errors={fileErrors} />
+      {variant === "create" && <FileUploadErrors errors={fileErrors} />}
 
       <div
         className={cn(
@@ -130,6 +154,9 @@ export function Editor({
           handleSend={handleSend}
           fileRef={fileRef}
           uploadedFilesCount={selectedFiles.length}
+          variant={variant}
+          onCancel={onCancel}
+          onUpdate={handleUpdate}
         />
 
         <div className="overflow-y-auto" style={{ maxHeight }}>
@@ -141,11 +168,13 @@ export function Editor({
         </div>
       </div>
 
-      <FilePreview
-        files={selectedFiles}
-        onRemove={removeFile}
-        getFileUrl={getFileUrl}
-      />
+      {variant === "create" && (
+        <FilePreview
+          files={selectedFiles}
+          onRemove={removeFile}
+          getFileUrl={getFileUrl}
+        />
+      )}
     </div>
   )
 }
