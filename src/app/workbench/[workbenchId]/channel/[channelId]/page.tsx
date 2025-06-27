@@ -5,7 +5,7 @@ import {
   useQuery,
   useMutation as useTanStackMutation,
 } from "@tanstack/react-query"
-import { useMutation } from "convex/react"
+import { useMutation, usePaginatedQuery } from "convex/react"
 import { Loader2, TriangleAlert } from "lucide-react"
 
 import { Editor } from "@/components/editor"
@@ -36,17 +36,18 @@ export default function ChannelPage() {
     convexQuery(api.channels.getChannelById, { workspaceId, channelId })
   )
 
-  const { mutate: createMessage, isPending: isCreateMessagePending } =
-    useTanStackMutation({
-      mutationFn: useConvexMutation(api.messages.createMessage),
-    })
+  const { mutate: createMessage } = useTanStackMutation({
+    mutationFn: useConvexMutation(api.messages.createMessage),
+  })
 
   const {
-    data: messagesData,
-    isPending: isMessagesLoading,
-    error: messagesError,
-  } = useQuery(
-    convexQuery(api.messages.getMessages, { workspaceId, channelId })
+    results: messagesData,
+    status,
+    loadMore,
+  } = usePaginatedQuery(
+    api.messages.getMessages,
+    { workspaceId, channelId },
+    { initialNumItems: 20 }
   )
 
   const handleSend = async (content: string | undefined, files: File[]) => {
@@ -69,7 +70,7 @@ export default function ChannelPage() {
     })
   }
 
-  if (isChannelPending || isMessagesLoading) {
+  if (isChannelPending || status === "LoadingFirstPage") {
     return (
       <div className="flex h-full items-center justify-center">
         <Loader2 className="text-muted-foreground size-4 animate-spin" />
@@ -90,7 +91,7 @@ export default function ChannelPage() {
     )
   }
 
-  if (messagesError || !messagesData) {
+  if (!messagesData) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-2">
         <Button size="icon" variant="destructive">
@@ -106,7 +107,13 @@ export default function ChannelPage() {
   return (
     <div className="flex h-screen flex-col">
       <ChannelHeader channel={channel} />
-      <MessageList messages={messagesData} />
+      <MessageList
+        messages={messagesData}
+        channel={channel}
+        loadMore={loadMore}
+        isLoadingMore={status === "LoadingMore"}
+        canLoadMore={status === "CanLoadMore"}
+      />
       <div className="p-2">
         <Editor
           placeholder={`Message # ${channel?.name}`}

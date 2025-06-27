@@ -1,4 +1,5 @@
 import { getAuthUserId } from "@convex-dev/auth/server"
+import { paginationOptsValidator } from "convex/server"
 import { ConvexError, v } from "convex/values"
 
 import { Doc, Id } from "./_generated/dataModel"
@@ -51,6 +52,7 @@ export const getMessages = query({
   args: {
     workspaceId: v.id("workspace"),
     channelId: v.optional(v.id("channel")),
+    paginationOpts: paginationOptsValidator,
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx)
@@ -62,46 +64,49 @@ export const getMessages = query({
         q.eq("workspaceId", args.workspaceId).eq("userId", userId)
       )
       .unique()
+
     if (!member) throw new ConvexError("Unauthorized")
 
     const messages = await ctx.db
       .query("message")
-      .withIndex("by_channel_id", (q) => q.eq("channelId", args.channelId))
+      .withIndex("by_channel_id", (q) => q.eq("channelId", args.channelId!))
       .order("desc")
-      .collect()
+      .paginate(args.paginationOpts)
 
-    const messagesWithUsers = await Promise.all(
-      messages.map(async (message) => {
+    const page = await Promise.all(
+      messages.page.map(async (message) => {
         const member = await getMember(ctx, message.memberId)
         if (!member) return null
 
         const user = await getUser(ctx, member.userId)
         if (!user) return null
 
-        const images = await Promise.all(
-          message.files?.map((file) => getFile(ctx, file)) || []
-        )
+        let images: string[] = []
+        if (message.files) {
+          images = (
+            await Promise.all(message.files?.map((file) => getFile(ctx, file)))
+          ).filter((url): url is string => url !== null)
+        }
 
         const reactions = await ctx.db
           .query("reaction")
           .withIndex("by_message_id", (q) => q.eq("messageId", message._id))
           .collect()
 
-        const reactionsWithCounts = reactions.map((reaction) => ({
-          ...reaction,
-          count: reactions.filter((r) => r.emoji === reaction.emoji).length,
-        }))
-
-        const dedupedReactions = reactionsWithCounts.reduce(
+        const dedupedReactions = reactions.reduce(
           (acc, reaction) => {
-            const existingReaction = acc.find((r) => r.emoji === reaction.emoji)
-
-            if (existingReaction) {
-              existingReaction.memberIds = Array.from(
-                new Set([...existingReaction.memberIds, reaction.memberId])
+            const existing = acc.find((r) => r.emoji === reaction.emoji)
+            if (existing) {
+              existing.memberIds = Array.from(
+                new Set([...existing.memberIds, reaction.memberId])
               )
+              existing.count++
             } else {
-              acc.push({ ...reaction, memberIds: [reaction.memberId] })
+              acc.push({
+                ...reaction,
+                count: 1,
+                memberIds: [reaction.memberId],
+              })
             }
             return acc
           },
@@ -112,6 +117,7 @@ export const getMessages = query({
         )
 
         const reactionsWithoutMemberId = dedupedReactions.map(
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           ({ memberId, ...rest }) => rest
         )
 
@@ -125,7 +131,10 @@ export const getMessages = query({
       })
     )
 
-    return messagesWithUsers.filter((message) => message !== null)
+    return {
+      ...messages,
+      page: page.filter((msg) => msg !== null),
+    }
   },
 })
 

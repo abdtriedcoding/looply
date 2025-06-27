@@ -33,12 +33,17 @@ export const Message = ({
   updatedAt,
 }: {
   messageId: Id<"message">
-  authorName: string
-  authorImage: string
-  createdAt: string
-  body: string
+  authorName?: string
+  authorImage?: string
+  createdAt: Doc<"message">["_creationTime"]
+  body?: string
   image: string[]
-  reactions: any[]
+  reactions: Array<
+    Omit<Doc<"reaction">, "memberId"> & {
+      count: number
+      memberIds: Id<"workspaceMember">[]
+    }
+  >
   isAuthor: boolean
   updatedAt: Doc<"message">["updatedAt"]
 }) => {
