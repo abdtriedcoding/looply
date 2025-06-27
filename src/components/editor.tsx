@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils"
 interface EditorProps {
   placeholder?: string
   maxHeight?: string
-  onSend?: (content: string, files: File[]) => void
+  onSend?: (content: string | undefined, files: File[]) => void
   initialContent?: string
 }
 
@@ -52,7 +52,7 @@ export function Editor({
         openOnClick: true,
         HTMLAttributes: {
           class:
-            "text-primary underline hover:text-primary/80 transition-colors cursor-pointer",
+            "text-blue-700 underline hover:text-blue-700/80 transition-colors cursor-pointer",
           target: "_blank",
           rel: "noopener noreferrer",
         },
@@ -60,6 +60,8 @@ export function Editor({
       Placeholder.configure({
         placeholder,
         emptyEditorClass: "is-editor-empty",
+        showOnlyWhenEditable: true,
+        showOnlyCurrent: true,
       }),
       Underline,
     ],
@@ -84,20 +86,14 @@ export function Editor({
   }
 
   const handleSend = () => {
-    const content = editor.getText().trim()
-    if ((content || selectedFiles.length > 0) && onSend) {
-      // TODO: Here you would typically call the database upload function
-      // Example:
-      // const uploadResult = await processFileUploads(selectedFiles, userId, channelId, messageId)
-      // if (uploadResult.success) {
-      //   onSend(content, selectedFiles)
-      //   editor.commands.setContent("")
-      //   clearFiles()
-      // } else {
-      //   setFileErrors(uploadResult.errors || [])
-      // }
+    const plainText = editor.getText().trim()
+    const htmlContent = editor.getHTML()
 
-      onSend(content, selectedFiles)
+    if ((plainText || selectedFiles.length > 0) && onSend) {
+      // Send HTML content if there's text, otherwise send undefined
+      const textToSend = plainText ? htmlContent : undefined
+
+      onSend(textToSend, selectedFiles)
       editor.commands.setContent("")
       clearFiles()
     }
@@ -110,7 +106,6 @@ export function Editor({
     }
   }
 
-  console.log("main editor")
   return (
     <div className="mx-auto w-full max-w-4xl">
       <input
@@ -141,7 +136,7 @@ export function Editor({
           <EditorContent
             editor={editor}
             onKeyDown={handleKeyDown}
-            className="[&_.ProseMirror]:text-foreground [&_.ProseMirror_blockquote]:border-border [&_.ProseMirror_pre]:bg-muted [&_.ProseMirror_code]:bg-muted [&_.ProseMirror]:min-h-[120px] [&_.ProseMirror]:bg-transparent [&_.ProseMirror]:p-4 [&_.ProseMirror]:text-base [&_.ProseMirror]:leading-relaxed [&_.ProseMirror]:font-normal [&_.ProseMirror]:focus:outline-none [&_.ProseMirror_blockquote]:border-l-4 [&_.ProseMirror_blockquote]:pl-4 [&_.ProseMirror_blockquote]:italic [&_.ProseMirror_code]:rounded [&_.ProseMirror_code]:px-1 [&_.ProseMirror_code]:py-0.5 [&_.ProseMirror_code]:text-sm [&_.ProseMirror_h1]:mb-4 [&_.ProseMirror_h1]:text-2xl [&_.ProseMirror_h1]:font-bold [&_.ProseMirror_h2]:mb-3 [&_.ProseMirror_h2]:text-xl [&_.ProseMirror_h2]:font-semibold [&_.ProseMirror_ol]:list-decimal [&_.ProseMirror_ol]:pl-6 [&_.ProseMirror_p]:mb-2 [&_.ProseMirror_p:last-child]:mb-0 [&_.ProseMirror_pre]:rounded [&_.ProseMirror_pre]:p-3 [&_.ProseMirror_ul]:list-disc [&_.ProseMirror_ul]:pl-6"
+            className="[&_.ProseMirror]:text-foreground [&_.ProseMirror_blockquote]:border-border [&_.ProseMirror_pre]:bg-muted [&_.ProseMirror_code]:bg-muted [&_.is-editor-empty]:before:text-muted-foreground [&_.ProseMirror]:min-h-[120px] [&_.ProseMirror]:bg-transparent [&_.ProseMirror]:p-4 [&_.ProseMirror]:text-base [&_.ProseMirror]:leading-relaxed [&_.ProseMirror]:font-normal [&_.ProseMirror]:focus:outline-none [&_.ProseMirror_blockquote]:border-l-4 [&_.ProseMirror_blockquote]:pl-4 [&_.ProseMirror_blockquote]:italic [&_.ProseMirror_code]:rounded [&_.ProseMirror_code]:px-1 [&_.ProseMirror_code]:py-0.5 [&_.ProseMirror_code]:text-sm [&_.ProseMirror_h1]:mb-4 [&_.ProseMirror_h1]:text-2xl [&_.ProseMirror_h1]:font-bold [&_.ProseMirror_h2]:mb-3 [&_.ProseMirror_h2]:text-xl [&_.ProseMirror_h2]:font-semibold [&_.ProseMirror_ol]:list-decimal [&_.ProseMirror_ol]:pl-6 [&_.ProseMirror_p]:mb-2 [&_.ProseMirror_p:last-child]:mb-0 [&_.ProseMirror_pre]:rounded [&_.ProseMirror_pre]:p-3 [&_.ProseMirror_ul]:list-disc [&_.ProseMirror_ul]:pl-6 [&_.is-editor-empty]:before:pointer-events-none [&_.is-editor-empty]:before:absolute [&_.is-editor-empty]:before:top-4 [&_.is-editor-empty]:before:left-4 [&_.is-editor-empty]:before:content-[attr(data-placeholder)] [&_.is-editor-empty]:before:select-none"
           />
         </div>
       </div>
