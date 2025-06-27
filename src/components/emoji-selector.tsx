@@ -18,10 +18,12 @@ import {
 interface EmojiSelectorProps {
   children: ReactNode
   hint?: string
+  align?: "start" | "end"
   onEmojiSelect: (emojiValue: string) => void
 }
 
 export function EmojiSelector({
+  align = "start",
   children,
   hint,
   onEmojiSelect,
@@ -62,7 +64,7 @@ export function EmojiSelector({
         </Tooltip>
         <PopoverContent
           className="w-full border-none p-0 shadow-none"
-          align="start"
+          align={align}
           side="bottom"
           sideOffset={-50}
         >
