@@ -3,9 +3,13 @@ import { useQuery } from "@tanstack/react-query"
 import dayjs from "dayjs"
 import { Loader } from "lucide-react"
 
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+
 import { Message } from "@/features/channels/components/message"
 
 import { useWorkspaceId } from "@/hooks/useWorkspaceId"
+
+import { MESSAGE_COMPACT_TIME_WINDOW_MINUTES } from "@/constants"
 
 import { api } from "../../../../convex/_generated/api"
 import { Doc } from "../../../../convex/_generated/dataModel"
@@ -13,13 +17,15 @@ import { Doc } from "../../../../convex/_generated/dataModel"
 export const MessageList = ({
   messages,
   channel,
+  member,
   variant = "channel",
   isLoadingMore,
   canLoadMore,
   loadMore,
 }: {
   messages: (typeof api.messages.getMessages._returnType)["page"]
-  channel: Doc<"channel">
+  channel?: Doc<"channel">
+  member?: Doc<"workspaceMember"> & { user: Doc<"users"> }
   variant?: "channel" | "direct"
   isLoadingMore: boolean
   canLoadMore: boolean
@@ -57,7 +63,16 @@ export const MessageList = ({
             </span>
           </div>
           <div className="flex flex-col-reverse">
-            {group.messages.map((message) => {
+            {group.messages.map((message, index) => {
+              const nextMessage = group.messages[index + 1]
+              const isMessageCompact =
+                nextMessage &&
+                nextMessage.user._id === message.user._id &&
+                dayjs(message._creationTime).diff(
+                  nextMessage._creationTime,
+                  "minute"
+                ) < MESSAGE_COMPACT_TIME_WINDOW_MINUTES
+
               return (
                 <Message
                   key={message._id}
@@ -69,6 +84,7 @@ export const MessageList = ({
                   image={message.images}
                   reactions={message.reactions}
                   isAuthor={message.memberId === currentMember?._id}
+                  isCompact={!!isMessageCompact}
                   updatedAt={message.updatedAt}
                 />
               )
@@ -106,7 +122,7 @@ export const MessageList = ({
         </div>
       )}
 
-      {variant === "channel" && (
+      {variant === "channel" && channel && (
         <div className="mx-5 mb-4 pt-20">
           <p className="mb-2 flex items-center text-2xl font-bold">
             # {channel.name}
@@ -115,6 +131,24 @@ export const MessageList = ({
             This channel was created on{" "}
             {dayjs(channel._creationTime).format("MMMM D, YYYY")}. This is the
             very beginning of the <strong>{channel.name}</strong> channel.
+          </p>
+        </div>
+      )}
+
+      {variant === "direct" && member && (
+        <div className="mx-5 mb-4 pt-20">
+          <div className="mb-2 flex items-center gap-x-1">
+            <Avatar className="mr-2 size-14">
+              <AvatarImage src={member.user.image} />
+              <AvatarFallback>
+                {member.user.name?.charAt(0).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <p className="text-2xl font-bold"># {member.user.name}</p>
+          </div>
+          <p className="text-muted-foreground mb-4 font-normal">
+            This conversation is just between you and{" "}
+            <strong>{member.user.name}</strong>
           </p>
         </div>
       )}
