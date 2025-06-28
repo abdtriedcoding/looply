@@ -23,6 +23,7 @@ export const createMessage = mutation({
     files: v.optional(v.array(v.id("_storage"))),
     workspaceId: v.id("workspace"),
     channelId: v.optional(v.id("channel")),
+    conversationId: v.optional(v.id("conversation")),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx)
@@ -41,6 +42,7 @@ export const createMessage = mutation({
       files: args.files,
       channelId: args.channelId,
       workspaceId: args.workspaceId,
+      conversationId: args.conversationId,
       memberId: member._id,
     })
 
@@ -52,6 +54,7 @@ export const getMessages = query({
   args: {
     workspaceId: v.id("workspace"),
     channelId: v.optional(v.id("channel")),
+    conversationId: v.optional(v.id("conversation")),
     paginationOpts: paginationOptsValidator,
   },
   handler: async (ctx, args) => {
@@ -69,7 +72,11 @@ export const getMessages = query({
 
     const messages = await ctx.db
       .query("message")
-      .withIndex("by_channel_id", (q) => q.eq("channelId", args.channelId!))
+      .withIndex("by_channel_id_conversation_id", (q) =>
+        q
+          .eq("channelId", args.channelId!)
+          .eq("conversationId", args.conversationId!)
+      )
       .order("desc")
       .paginate(args.paginationOpts)
 
