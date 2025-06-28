@@ -28,7 +28,7 @@ export const MessageList = ({
   const workspaceId = useWorkspaceId()
 
   const { data: currentMember } = useQuery(
-    convexQuery(api.currentMember.currentMember, { workspaceId })
+    convexQuery(api.members.currentMember, { workspaceId })
   )
 
   const groupedMessages = messages.reduce(

@@ -46,7 +46,7 @@ export function Sidebar() {
     data: member,
     isPending: isMemberLoading,
     error: memberError,
-  } = useQuery(convexQuery(api.currentMember.currentMember, { workspaceId }))
+  } = useQuery(convexQuery(api.members.currentMember, { workspaceId }))
 
   if (isWorkspaceLoading || isUserLoading || isMemberLoading) {
     return <SidebarSkeleton />
