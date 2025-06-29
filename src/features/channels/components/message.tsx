@@ -12,6 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 import { Thumbnail } from "@/features/channels/components/thumbnail"
 import { Toolbar } from "@/features/channels/components/toolbar"
+import { usePannelStore } from "@/features/members/store/usePannel"
 
 import { handleConvexMutationError } from "@/lib/convex-mutation-error"
 import { formatFullTime } from "@/lib/date-formatter"
@@ -23,6 +24,7 @@ import { Reactions } from "./reactions"
 
 export const Message = ({
   messageId,
+  authorId,
   authorName,
   authorImage,
   createdAt,
@@ -34,6 +36,7 @@ export const Message = ({
   updatedAt,
 }: {
   messageId: Id<"message">
+  authorId: Id<"workspaceMember">
   authorName?: string
   authorImage?: string
   createdAt: Doc<"message">["_creationTime"]
@@ -51,6 +54,7 @@ export const Message = ({
 }) => {
   const [isEditing, setIsEditing] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const { openProfile } = usePannelStore()
 
   const handleEdit = () => {
     setIsEditing(true)
@@ -149,12 +153,14 @@ export const Message = ({
     <>
       <div className="group hover:bg-muted relative flex flex-col p-1.5 px-5">
         <div className="flex items-start gap-2">
-          <Avatar>
-            <AvatarImage src={authorImage} />
-            <AvatarFallback>
-              {authorName?.charAt(0).toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
+          <button onClick={() => openProfile(authorId)}>
+            <Avatar>
+              <AvatarImage src={authorImage} />
+              <AvatarFallback>
+                {authorName?.charAt(0).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+          </button>
 
           {isEditing ? (
             <Editor
@@ -166,9 +172,12 @@ export const Message = ({
           ) : (
             <div className="flex flex-col">
               <div className="flex items-center gap-2 text-sm">
-                <h2 className="text-primary font-bold hover:underline">
+                <button
+                  onClick={() => openProfile(authorId)}
+                  className="text-primary font-bold hover:underline"
+                >
                   {authorName}
-                </h2>
+                </button>
                 <Hint label={formatFullTime(dayjs(createdAt))}>
                   <button className="text-muted-foreground text-xs hover:underline">
                     {dayjs(createdAt).format("h:mm a")}
