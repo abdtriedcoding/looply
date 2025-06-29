@@ -9,7 +9,9 @@ import {
 } from "@/components/ui/resizable"
 
 import { ProfilePannel } from "@/features/members/components/profile-pannel"
-import { usePannelStore } from "@/features/members/store/usePannel"
+import { useProfilePannelStore } from "@/features/members/store/useProfilePannel"
+import { ThreadPannel } from "@/features/messages/components/thread-panel"
+import { useThreadStore } from "@/features/messages/store/useThread"
 import { WorkspaceSidebar } from "@/features/workspaces/components/workspace-sidebar"
 
 export default function WorkspaceLayout({
@@ -17,7 +19,10 @@ export default function WorkspaceLayout({
 }: {
   children: React.ReactNode
 }) {
-  const { memberProfileId } = usePannelStore()
+  const { memberProfileId } = useProfilePannelStore()
+  const { messageId } = useThreadStore()
+  const showPanel = memberProfileId || messageId
+
   return (
     <div className="flex h-screen">
       <Sidebar />
@@ -26,15 +31,16 @@ export default function WorkspaceLayout({
           <WorkspaceSidebar />
         </ResizablePanel>
         <ResizableHandle withHandle />
-        <ResizablePanel defaultSize={memberProfileId ? 55 : 80} minSize={40}>
+        <ResizablePanel defaultSize={showPanel ? 55 : 80} minSize={40}>
           <Modals />
           {children}
         </ResizablePanel>
-        {memberProfileId && (
+        {showPanel && (
           <>
             <ResizableHandle withHandle />
             <ResizablePanel defaultSize={25} minSize={20} maxSize={30}>
-              <ProfilePannel memberId={memberProfileId} />
+              {memberProfileId && <ProfilePannel memberId={memberProfileId} />}
+              {messageId && <ThreadPannel messageId={messageId} />}
             </ResizablePanel>
           </>
         )}
