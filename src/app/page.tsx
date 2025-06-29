@@ -13,19 +13,19 @@ export default function Home() {
   const router = useRouter()
 
   const { data: workspaces, isLoading } = useGetWorkspaces()
-  const workspaceId = workspaces?.[0]?._id
+  const workbenchId = workspaces?.[0]?._id
 
   const { isOpen, setIsOpen } = useCreateWorkspaceModalStore()
 
   useEffect(() => {
     if (isLoading) return
 
-    if (workspaceId) {
-      router.replace(`/workspace/${workspaceId}`)
+    if (workbenchId) {
+      router.replace(`/workbench/${workbenchId}`)
     } else if (!isOpen) {
       setIsOpen(true)
     }
-  }, [isLoading, workspaceId, setIsOpen, router, isOpen])
+  }, [isLoading, workbenchId, setIsOpen, router, isOpen])
 
   return (
     <div className="flex h-screen items-center justify-center">
