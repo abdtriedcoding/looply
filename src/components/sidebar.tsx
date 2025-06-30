@@ -1,10 +1,11 @@
 "use client"
 
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 
 import { convexQuery } from "@convex-dev/react-query"
 import { useQuery } from "@tanstack/react-query"
-import { Home, LucideIcon, MessageSquare, TriangleAlert } from "lucide-react"
+import { LucideIcon, TriangleAlert } from "lucide-react"
 
 import { Hint } from "@/components/hint"
 import { NavUser } from "@/components/nav-user"
@@ -15,7 +16,7 @@ import { WorkspaceSwitcher } from "@/features/workspaces/components/workspace-sw
 
 import { useWorkspaceId } from "@/hooks/useWorkspaceId"
 
-import { ADMIN } from "@/constants"
+import { ROLE, SIDEBAR_ITEMS } from "@/constants"
 
 import { api } from "../../convex/_generated/api"
 
@@ -27,76 +28,83 @@ interface SidebarItemProps {
   disabled?: boolean
 }
 
+interface SidebarErrorFallbackProps {
+  errorMessage: string
+}
+
 export function Sidebar() {
-  const workspaceId = useWorkspaceId()
+  const pathname = usePathname()
+  const currentWorkspaceId = useWorkspaceId()
 
   const {
-    data: workspace,
+    data: currentWorkspace,
     isPending: isWorkspaceLoading,
-    error: workspaceError,
-  } = useQuery(convexQuery(api.workspaces.getWorkspaceById, { workspaceId }))
+    error: workspaceLoadingError,
+  } = useQuery(
+    convexQuery(api.workspaces.getWorkspaceById, {
+      workspaceId: currentWorkspaceId,
+    })
+  )
 
   const {
-    data: user,
+    data: currentUser,
     isPending: isUserLoading,
-    error: userError,
+    error: userLoadingError,
   } = useQuery(convexQuery(api.currentuser.user, {}))
 
   const {
-    data: member,
+    data: currentMember,
     isPending: isMemberLoading,
-    error: memberError,
-  } = useQuery(convexQuery(api.members.currentMember, { workspaceId }))
+    error: memberLoadingError,
+  } = useQuery(
+    convexQuery(api.members.currentMember, { workspaceId: currentWorkspaceId })
+  )
 
-  if (isWorkspaceLoading || isUserLoading || isMemberLoading) {
-    return <SidebarSkeleton />
-  }
+  const isLoading = isWorkspaceLoading || isUserLoading || isMemberLoading
+  const hasLoadingErrors = [
+    workspaceLoadingError,
+    userLoadingError,
+    memberLoadingError,
+  ].some(Boolean)
+  const isCurrentUserAdmin = currentMember?.role === ROLE.ADMIN
 
-  if (workspaceError || !workspace) {
-    return (
-      <div className="flex h-full w-16 flex-col items-center justify-center border-r p-4">
-        <Hint label="Failed to load workspace" side="right" align="center">
-          <Button size="icon" variant="destructive">
-            <TriangleAlert className="h-full w-full" />
-          </Button>
-        </Hint>
-      </div>
-    )
-  }
+  if (isLoading) return <SidebarSkeleton />
 
-  if (userError || !user) {
-    return (
-      <div className="flex h-full w-16 flex-col items-center justify-center border-r p-4">
-        <Hint label="Failed to load user" side="right" align="center">
-          <Button size="icon" variant="destructive">
-            <TriangleAlert className="h-full w-full" />
-          </Button>
-        </Hint>
-      </div>
-    )
-  }
+  if (hasLoadingErrors)
+    return <SidebarErrorFallback errorMessage="Failed to load sidebar data" />
 
-  if (memberError || !member) {
-    return (
-      <div className="flex h-full w-16 flex-col items-center justify-center border-r p-4">
-        <Hint label="Failed to load member" side="right" align="center">
-          <Button size="icon" variant="destructive">
-            <TriangleAlert className="h-full w-full" />
-          </Button>
-        </Hint>
-      </div>
-    )
-  }
+  if (!currentWorkspace)
+    return <SidebarErrorFallback errorMessage="Workspace not found" />
 
-  const isAdmin = member.role === ADMIN
+  if (!currentUser)
+    return <SidebarErrorFallback errorMessage="User not found" />
+
+  if (!currentMember)
+    return <SidebarErrorFallback errorMessage="Member access denied" />
 
   return (
     <div className="flex h-full w-16 flex-col items-center gap-y-4 border-r p-4">
-      <WorkspaceSwitcher workspace={workspace} isAdmin={isAdmin} />
-      <SidebarItem icon={Home} label="Home" href="/" isActive />
-      <SidebarItem icon={MessageSquare} label="Messages" href="/messages" />
+      <WorkspaceSwitcher
+        workspace={currentWorkspace}
+        isAdmin={isCurrentUserAdmin}
+      />
+
+      {SIDEBAR_ITEMS.map((navigationItem) => (
+        <SidebarItem
+          key={navigationItem.href}
+          icon={navigationItem.icon}
+          label={navigationItem.label}
+          href={navigationItem.href}
+          isActive={pathname === navigationItem.href}
+        />
+      ))}
+
       <div className="mt-auto">
-        <NavUser workspace={workspace} user={user} isAdmin={isAdmin} />
+        <NavUser
+          workspace={currentWorkspace}
+          user={currentUser}
+          isAdmin={isCurrentUserAdmin}
+        />
       </div>
     </div>
   )
@@ -113,7 +121,7 @@ function SidebarItem({
     <Hint label={label} side="right" align="center">
       <Button
         size="icon"
-        variant={isActive ? "default" : "ghost"}
+        variant={isActive ? "default" : "secondary"}
         disabled={disabled}
         asChild
       >
@@ -148,6 +156,18 @@ function SidebarSkeleton() {
           <Skeleton className="h-full w-full animate-pulse" />
         </Button>
       </div>
+    </div>
+  )
+}
+
+function SidebarErrorFallback({ errorMessage }: SidebarErrorFallbackProps) {
+  return (
+    <div className="flex h-full w-16 flex-col items-center justify-center border-r p-4">
+      <Hint label={errorMessage} side="right" align="center">
+        <Button size="icon" variant="destructive">
+          <TriangleAlert className="size-4 text-rose-400" />
+        </Button>
+      </Hint>
     </div>
   )
 }

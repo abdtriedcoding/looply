@@ -1,5 +1,9 @@
 import { useRouter } from "next/navigation"
 
+import { useConvexMutation } from "@convex-dev/react-query"
+import { useMutation } from "@tanstack/react-query"
+import { toast } from "sonner"
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -11,31 +15,42 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 
-import { useDeleteWorkspace } from "@/features/workspaces/api/useDeleteWorkspace"
+import { handleConvexMutationError } from "@/lib/convex-mutation-error"
 
+import { api } from "../../../../convex/_generated/api"
 import { Doc } from "../../../../convex/_generated/dataModel"
+
+interface DeleteWorkspaceModalProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  workspace: Doc<"workspace">
+}
 
 export function DeleteWorkspaceModal({
   open,
   onOpenChange,
   workspace,
-}: {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  workspace: Doc<"workspace">
-}) {
+}: DeleteWorkspaceModalProps) {
   const router = useRouter()
 
-  const { mutate: deleteWorkspace, isPending: isDeleteWorkspacePending } =
-    useDeleteWorkspace()
+  const { mutate: deleteWorkspace, isPending: isDeletingWorkspace } =
+    useMutation({
+      mutationFn: useConvexMutation(api.workspaces.deleteWorkspace),
+    })
 
-  function handleDelete() {
+  const handleSubmit = () => {
     deleteWorkspace(
       { workspaceId: workspace._id },
       {
         onSuccess: () => {
           onOpenChange(false)
           router.replace("/")
+          toast.success(`Workspace "${workspace.name}" deleted`)
+        },
+        onError: (err: Error) => {
+          toast.error(
+            handleConvexMutationError(err, "Failed to delete workspace")
+          )
         },
       }
     )
@@ -58,10 +73,10 @@ export function DeleteWorkspaceModal({
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
           <AlertDialogAction
-            disabled={isDeleteWorkspacePending}
-            onClick={handleDelete}
+            disabled={isDeletingWorkspace}
+            onClick={handleSubmit}
           >
-            {isDeleteWorkspacePending ? "Deleting..." : "Continue"}
+            {isDeletingWorkspace ? "Deleting..." : "Continue"}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

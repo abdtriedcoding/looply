@@ -17,49 +17,58 @@ import {
 
 import { useOrigin } from "@/hooks/useOrigin"
 
+import { COPY_STATUS_TIMEOUT } from "@/constants"
 import { handleConvexMutationError } from "@/lib/convex-mutation-error"
+import { cn } from "@/lib/utils"
 
 import { api } from "../../../../convex/_generated/api"
 import { Doc } from "../../../../convex/_generated/dataModel"
+
+interface InviteWorkspaceModalProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  workspace: Doc<"workspace">
+}
 
 export function InviteWorkspaceModal({
   open,
   onOpenChange,
   workspace,
-}: {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  workspace: Doc<"workspace">
-}) {
-  const origin = useOrigin()
-  const [isCopied, setIsCopied] = useState(false)
+}: InviteWorkspaceModalProps) {
+  const currentOrigin = useOrigin()
+  const [isInviteLinkCopied, setIsInviteLinkCopied] = useState(false)
 
-  const { mutate: updateJoinCode, isPending: isUpdateJoinCodePending } =
-    useMutation({
-      mutationFn: useConvexMutation(api.workspaces.updateWorkspaceJoinCode),
-      onError: (err: Error) => {
-        toast.error(
-          handleConvexMutationError(err, "Failed to generate new code")
-        )
-      },
-      onSuccess: () => {
-        toast.success("New code generated")
-      },
-    })
+  const {
+    mutate: generateNewWorkspaceJoinCode,
+    isPending: isGeneratingNewWorkspaceJoinCode,
+  } = useMutation({
+    mutationFn: useConvexMutation(api.workspaces.updateWorkspaceJoinCode),
+    onError: (err: Error) => {
+      toast.error(handleConvexMutationError(err, "Failed to generate new code"))
+    },
+    onSuccess: () => {
+      toast.success("New code generated")
+    },
+  })
 
-  const handleNewCode = () => {
-    updateJoinCode({ workspaceId: workspace._id })
+  const handleGenerateNewCode = () => {
+    generateNewWorkspaceJoinCode({ workspaceId: workspace._id })
   }
 
-  const handleCopy = async () => {
-    setIsCopied(true)
-    const link = `${origin}/join/${workspace._id}`
-    await navigator.clipboard.writeText(link)
-    toast.success("Link copied to clipboard")
-    setTimeout(() => {
-      setIsCopied(false)
-    }, 2000)
+  const handleCopyInviteLink = async () => {
+    const link = `${currentOrigin}/join/${workspace._id}`
+    setIsInviteLinkCopied(true)
+    try {
+      await navigator.clipboard.writeText(link)
+      toast.success("Link copied to clipboard")
+    } catch {
+      toast.error("Failed to copy link")
+    } finally {
+      setTimeout(() => setIsInviteLinkCopied(false), COPY_STATUS_TIMEOUT)
+    }
   }
+
+  const isModalClosable = !isGeneratingNewWorkspaceJoinCode
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -80,11 +89,11 @@ export function InviteWorkspaceModal({
           <Button
             variant="ghost"
             size="sm"
-            onClick={handleCopy}
-            disabled={isCopied}
+            onClick={handleCopyInviteLink}
+            disabled={isInviteLinkCopied}
           >
-            {isCopied ? "Copied" : "Copy link"}
-            {isCopied ? (
+            {isInviteLinkCopied ? "Copied" : "Copy link"}
+            {isInviteLinkCopied ? (
               <Check className="ml-2 size-4 text-emerald-500" />
             ) : (
               <Copy className="text-muted-foreground ml-2 size-4" />
@@ -93,15 +102,20 @@ export function InviteWorkspaceModal({
         </div>
         <div className="flex w-full items-center justify-between">
           <Button
-            onClick={handleNewCode}
+            onClick={handleGenerateNewCode}
             variant="outline"
-            disabled={isUpdateJoinCodePending}
+            disabled={isGeneratingNewWorkspaceJoinCode}
           >
-            {isUpdateJoinCodePending ? "Generating..." : "New code"}
-            <RefreshCcw className="text-muted-foreground ml-2 size-4" />
+            {isGeneratingNewWorkspaceJoinCode ? "Generating..." : "New code"}
+            <RefreshCcw
+              className={cn(
+                "ml-2 size-4",
+                isGeneratingNewWorkspaceJoinCode && "animate-spin"
+              )}
+            />
           </Button>
           <DialogClose asChild>
-            <Button>Close</Button>
+            <Button disabled={!isModalClosable}>Close</Button>
           </DialogClose>
         </div>
       </DialogContent>

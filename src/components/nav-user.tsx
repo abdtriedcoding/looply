@@ -30,45 +30,46 @@ interface NavUserMenuProps {
   isAdmin: boolean
 }
 
+type ModalType = "edit" | "delete" | "invite" | null
+
 export function NavUser({ workspace, user, isAdmin }: NavUserMenuProps) {
   const router = useRouter()
   const { signOut } = useAuthActions()
+  const [activeModal, setActiveModal] = useState<ModalType>(null)
 
-  const [isEditWorkspaceOpen, setEditWorkspaceOpen] = useState(false)
-  const [isDeleteWorkspaceOpen, setDeleteWorkspaceOpen] = useState(false)
-  const [isInviteWorkspaceOpen, setInviteWorkspaceOpen] = useState(false)
-
-  function handleLogout() {
-    signOut().then(() => router.push("/"))
+  const handleLogout = async () => {
+    try {
+      await signOut()
+      router.push("/")
+    } catch (err) {
+      console.error("Logout failed:", err)
+    }
   }
+
+  const userInitial = user.name?.[0] || user.email?.[0] || "U"
 
   return (
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button size="icon" variant="info">
-            {user.name
-              ? user.name.charAt(0).toUpperCase()
-              : user.email?.charAt(0).toUpperCase()}
+            {userInitial}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent
-          className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
-          side="right"
+          className="min-w-56 rounded-lg"
           align="end"
-          sideOffset={4}
+          side="right"
         >
           <DropdownMenuLabel className="p-0 font-normal">
             <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
               <Avatar className="h-8 w-8 rounded-lg">
                 <AvatarImage
                   src={user.image}
-                  alt={user.email || user.name || "User avatar"}
+                  alt={user.name || user.email || "User"}
                 />
                 <AvatarFallback className="rounded-lg">
-                  {user.name
-                    ? user.name.charAt(0).toUpperCase()
-                    : user.email?.charAt(0).toUpperCase()}
+                  {userInitial}
                 </AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
@@ -79,28 +80,31 @@ export function NavUser({ workspace, user, isAdmin }: NavUserMenuProps) {
               </div>
             </div>
           </DropdownMenuLabel>
+
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
-            <DropdownMenuItem onClick={() => setInviteWorkspaceOpen(true)}>
+            <DropdownMenuItem onClick={() => setActiveModal("invite")}>
               <Sparkles className="mr-2 size-4" />
               Invite to workspace
             </DropdownMenuItem>
           </DropdownMenuGroup>
+
           {isAdmin && (
             <>
               <DropdownMenuSeparator />
               <DropdownMenuGroup>
-                <DropdownMenuItem onClick={() => setEditWorkspaceOpen(true)}>
+                <DropdownMenuItem onClick={() => setActiveModal("edit")}>
                   <BadgeCheck className="mr-2 size-4" />
                   Edit Workspace
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setDeleteWorkspaceOpen(true)}>
+                <DropdownMenuItem onClick={() => setActiveModal("delete")}>
                   <Trash className="mr-2 size-4" />
                   Delete Workspace
                 </DropdownMenuItem>
               </DropdownMenuGroup>
             </>
           )}
+
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleLogout}>
             <LogOut className="mr-2 size-4" />
@@ -108,19 +112,26 @@ export function NavUser({ workspace, user, isAdmin }: NavUserMenuProps) {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
       <EditWorkspaceModal
-        open={isEditWorkspaceOpen}
-        onOpenChange={setEditWorkspaceOpen}
+        open={activeModal === "edit"}
+        onOpenChange={(open) =>
+          open ? setActiveModal("edit") : setActiveModal(null)
+        }
         workspace={workspace}
       />
       <DeleteWorkspaceModal
-        open={isDeleteWorkspaceOpen}
-        onOpenChange={setDeleteWorkspaceOpen}
+        open={activeModal === "delete"}
+        onOpenChange={(open) =>
+          open ? setActiveModal("delete") : setActiveModal(null)
+        }
         workspace={workspace}
       />
       <InviteWorkspaceModal
-        open={isInviteWorkspaceOpen}
-        onOpenChange={setInviteWorkspaceOpen}
+        open={activeModal === "invite"}
+        onOpenChange={(open) =>
+          open ? setActiveModal("invite") : setActiveModal(null)
+        }
         workspace={workspace}
       />
     </>

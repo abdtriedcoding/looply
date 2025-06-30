@@ -1,7 +1,10 @@
 import { useRouter } from "next/navigation"
 
+import { useConvexMutation } from "@convex-dev/react-query"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { useMutation } from "@tanstack/react-query"
 import { useForm } from "react-hook-form"
+import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -21,60 +24,74 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 
-import { useCreateWorkspace } from "@/features/workspaces/api/useCreateWorkspace"
-import { useWorkspaceModalStore } from "@/features/workspaces/store/useWorkspaceModalStore"
+import { useCreateWorkspaceModal } from "@/features/workspaces/store/useCreateWorkspaceModal"
 import {
   CreateWorkspaceForm,
   createWorkspaceFormSchema,
 } from "@/features/workspaces/validation/workspaceSchemas"
 
+import { handleConvexMutationError } from "@/lib/convex-mutation-error"
+
+import { api } from "../../../../convex/_generated/api"
+
+interface CreateWorkspaceModalProps {
+  isModalClosable?: boolean
+}
+
 export function CreateWorkspaceModal({
   isModalClosable = true,
-}: {
-  isModalClosable?: boolean
-}) {
+}: CreateWorkspaceModalProps) {
   const router = useRouter()
-  const { isOpen, setIsOpen } = useWorkspaceModalStore()
+  const { isWorkspaceModalOpen, closeWorkspaceModal } =
+    useCreateWorkspaceModal()
 
-  const form = useForm<CreateWorkspaceForm>({
+  const workspaceCreationForm = useForm<CreateWorkspaceForm>({
     resolver: zodResolver(createWorkspaceFormSchema),
     defaultValues: {
       name: "",
     },
   })
 
-  function handleClose() {
-    form.reset()
-    setIsOpen(false)
+  const { mutate: createWorkspace, isPending: isCreatingWorkspace } =
+    useMutation({
+      mutationFn: useConvexMutation(api.workspaces.createWorkspace),
+    })
+
+  const handleModalClose = () => {
+    if (!isCreatingWorkspace) {
+      workspaceCreationForm.reset()
+      closeWorkspaceModal()
+    }
   }
 
-  const { mutate: createWorkspace, isPending: isCreateWorkspacePending } =
-    useCreateWorkspace()
-
-  function handleSubmit(values: CreateWorkspaceForm) {
+  const handleSubmit = (values: CreateWorkspaceForm) => {
     createWorkspace(values, {
       onSuccess: (id) => {
-        router.push(`/workbench/${id}`)
-        handleClose()
+        toast.success(`Workspace "${values.name}" created`)
+        router.push(`/workspace/${id}`)
+        handleModalClose()
+      },
+      onError: (err: Error) => {
+        toast.error(
+          handleConvexMutationError(err, "Failed to create workspace")
+        )
       },
     })
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent
-        showCloseButton={isModalClosable && !isCreateWorkspacePending}
-      >
+    <Dialog open={isWorkspaceModalOpen} onOpenChange={handleModalClose}>
+      <DialogContent showCloseButton={isModalClosable && !isCreatingWorkspace}>
         <DialogHeader>
           <DialogTitle>Create a New Workspace</DialogTitle>
         </DialogHeader>
-        <Form {...form}>
+        <Form {...workspaceCreationForm}>
           <form
-            onSubmit={form.handleSubmit(handleSubmit)}
+            onSubmit={workspaceCreationForm.handleSubmit(handleSubmit)}
             className="space-y-5"
           >
             <FormField
-              control={form.control}
+              control={workspaceCreationForm.control}
               name="name"
               render={({ field }) => (
                 <FormItem>
@@ -90,8 +107,8 @@ export function CreateWorkspaceModal({
               )}
             />
             <DialogFooter>
-              <Button type="submit" disabled={isCreateWorkspacePending}>
-                {isCreateWorkspacePending ? "Creating..." : "Create Workspace"}
+              <Button type="submit" disabled={isCreatingWorkspace}>
+                {isCreatingWorkspace ? "Creating..." : "Create Workspace"}
               </Button>
             </DialogFooter>
           </form>

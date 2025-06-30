@@ -1,7 +1,5 @@
 "use client"
 
-import { Modals } from "@/components/modals"
-import { Sidebar } from "@/components/sidebar"
 import {
   ResizableHandle,
   ResizablePanel,
@@ -24,15 +22,13 @@ export default function WorkspaceLayout({
   const showPanel = memberProfileId || messageId
 
   return (
-    <div className="flex h-screen">
-      <Sidebar />
+    <div className="flex h-screen flex-1">
       <ResizablePanelGroup direction="horizontal">
         <ResizablePanel defaultSize={20} minSize={15} maxSize={25}>
           <WorkspaceSidebar />
         </ResizablePanel>
         <ResizableHandle withHandle />
         <ResizablePanel defaultSize={showPanel ? 55 : 80} minSize={40}>
-          <Modals />
           {children}
         </ResizablePanel>
         {showPanel && (
