@@ -12,20 +12,7 @@ import { Button } from "./ui/button"
 export function Sidebar() {
   return (
     <div className="flex h-full w-16 flex-col items-center gap-y-4 border-r p-4">
-      <TeamSwitcher
-        teams={[
-          {
-            name: "Looply",
-            logo: Home,
-            plan: "Free",
-          },
-          {
-            name: "Noted",
-            logo: MessageSquare,
-            plan: "Free",
-          },
-        ]}
-      />
+      <TeamSwitcher />
       <SidebarItem icon={Home} label="Home" href="/" isActive />
       <SidebarItem icon={MessageSquare} label="Messages" href="/messages" />
     </div>

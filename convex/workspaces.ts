@@ -42,3 +42,18 @@ export const createWorkspace = mutation({
     return workspaceId
   },
 })
+
+export const getWorkspaceById = query({
+  args: {
+    id: v.id("workspace"),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx)
+    if (userId === null) {
+      return null
+    }
+
+    const workspace = await ctx.db.get(args.id)
+    return workspace
+  },
+})
