@@ -6,7 +6,7 @@ import {
   createWorkspaceArgsSchema,
   deleteWorkspaceArgsSchema,
   updateWorkspaceArgsSchema,
-} from "@/features/workspaces/validation/workspaceSchemas"
+} from "@/features/workspaces/validation/workspace-schemas"
 
 import { generateWorkspaceCode } from "@/lib/generate-join-code"
 
@@ -51,7 +51,7 @@ export const createWorkspace = mutation({
       joinCode: generateWorkspaceCode(),
     })
 
-    await ctx.db.insert("workspaceMember", {
+    const workspaceMemberId = await ctx.db.insert("workspaceMember", {
       workspaceId,
       userId,
       role: "admin",
@@ -61,6 +61,13 @@ export const createWorkspace = mutation({
       name: "general",
       workspaceId,
     })
+
+    await ctx.db.insert("conversation", {
+      workspaceId,
+      memberOneId: workspaceMemberId,
+      memberTwoId: workspaceMemberId,
+    })
+
     return workspaceId
   },
 })
@@ -86,7 +93,18 @@ export const getWorkspaceById = query({
     }
 
     const workspace = await ctx.db.get(args.workspaceId)
-    return workspace
+
+    if (!workspace) {
+      return null
+    }
+
+    return {
+      ...workspace,
+      // If the message is an "image" its `body` is an `Id<"_storage">`
+      ...(workspace.imageUrl
+        ? { url: await ctx.storage.getUrl(workspace.imageUrl) }
+        : {}),
+    }
   },
 })
 

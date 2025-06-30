@@ -42,7 +42,7 @@ export function AllConversations({
             <Button
               onClick={() =>
                 router.push(
-                  `/workbench/${workspaceId}/conversation/${conversation._id}/member/${otherMemberId}`
+                  `/workspace/${workspaceId}/conversation/${conversation._id}/member/${otherMemberId}`
                 )
               }
               size="lg"

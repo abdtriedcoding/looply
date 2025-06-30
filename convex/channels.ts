@@ -5,7 +5,7 @@ import {
   createChannelArgsSchema,
   deleteChannelArgsSchema,
   updateChannelArgsSchema,
-} from "@/features/channels/validation/channelSchemas"
+} from "@/features/channels/validation/channel-schemas"
 
 import { mutation, query } from "./_generated/server"
 
@@ -69,12 +69,12 @@ export const createChannel = mutation({
     const workspace = await ctx.db.get(args.workspaceId)
     if (!workspace) throw new ConvexError("Workspace not found")
 
-    const channel = await ctx.db.insert("channel", {
+    const channelId = await ctx.db.insert("channel", {
       workspaceId: args.workspaceId,
       name: args.name,
       description: args.description,
     })
-    return channel
+    return { channelId, channelName: args.name }
   },
 })
 

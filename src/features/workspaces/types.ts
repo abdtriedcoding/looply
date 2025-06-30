@@ -1,5 +1,11 @@
 import { Doc } from "../../../convex/_generated/dataModel"
 
+export type WorkspaceModalType =
+  | "createWorkspace"
+  | "editWorkspace"
+  | "deleteWorkspace"
+  | "inviteWorkspace"
+
 export type SidebarErrorFallbackProps = {
   errorMessage: string
 }
@@ -27,10 +33,3 @@ export type WorkspaceChannelsProps = {
   onOpenEditModal: () => void
   onOpenDeleteModal: () => void
 }
-
-export type ModalType =
-  | "createChannel"
-  | "editChannel"
-  | "deleteChannel"
-  | "createConversation"
-  | null

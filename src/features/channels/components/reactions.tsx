@@ -1,6 +1,6 @@
 import { useConvexMutation } from "@convex-dev/react-query"
 import { useMutation } from "@tanstack/react-query"
-import { Plus, Smile } from "lucide-react"
+import { Smile } from "lucide-react"
 
 import { EmojiSelector } from "@/components/emoji-selector"
 import { Hint } from "@/components/hint"
