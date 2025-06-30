@@ -1,5 +1,10 @@
+import { useRouter } from "next/navigation"
+
+import { useConvexMutation } from "@convex-dev/react-query"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { useMutation } from "@tanstack/react-query"
 import { useForm } from "react-hook-form"
+import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -20,13 +25,16 @@ import {
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 
-import { useCreateChannel } from "@/features/channels/api/useCreateChannel"
 import {
   CreateChannelForm,
   createChannelFormSchema,
-} from "@/features/channels/validation/channelSchemas"
+} from "@/features/channels/validation/channel-schemas"
 
 import { useWorkspaceId } from "@/hooks/useWorkspaceId"
+
+import { handleConvexMutationError } from "@/lib/convex-mutation-error"
+
+import { api } from "../../../../convex/_generated/api"
 
 export function CreateChannelModal({
   open,
@@ -35,9 +43,8 @@ export function CreateChannelModal({
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
-  const workspaceId = useWorkspaceId()
-  const { mutate: createChannel, isPending: isCreateChannelPending } =
-    useCreateChannel()
+  const router = useRouter()
+  const currentWorkspaceId = useWorkspaceId()
 
   const form = useForm<CreateChannelForm>({
     resolver: zodResolver(createChannelFormSchema),
@@ -52,13 +59,33 @@ export function CreateChannelModal({
     onOpenChange(false)
   }
 
+  const { mutate: createChannel, isPending: isCreateChannelPending } =
+    useMutation({
+      mutationFn: useConvexMutation(api.channels.createChannel),
+    })
+
   function handleSubmit(values: CreateChannelForm) {
-    createChannel(
-      { ...values, workspaceId },
-      {
-        onSuccess: () => handleClose(),
-      }
-    )
+    const validationResult = createChannelFormSchema.safeParse(values)
+
+    if (!validationResult.success) {
+      toast.error("Invalid form data")
+      return
+    }
+
+    const payload = {
+      ...validationResult.data,
+      workspaceId: currentWorkspaceId,
+    }
+
+    createChannel(payload, {
+      onSuccess: ({ channelId, channelName }) => {
+        toast.success(`Channel "${channelName}" created`)
+        router.replace(`/workspace/${currentWorkspaceId}/channel/${channelId}`)
+      },
+      onError: (err: Error) => {
+        toast.error(handleConvexMutationError(err, "Failed to create channel"))
+      },
+    })
   }
 
   return (

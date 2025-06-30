@@ -1,22 +1,21 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 
 import { convexQuery } from "@convex-dev/react-query"
 import { useQuery } from "@tanstack/react-query"
 import {
-  Bookmark,
   ChevronDown,
   Ellipsis,
   HashIcon,
-  Loader2,
   MessageSquare,
   Plus,
   TriangleAlert,
 } from "lucide-react"
 
 import { Hint } from "@/components/hint"
+import { LoadingScreen } from "@/components/loading-screen"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -31,323 +30,208 @@ import { DeleteChannelModal } from "@/features/channels/components/delete-channe
 import { EditChannelModal } from "@/features/channels/components/edit-channel-modal"
 import { AllConversations } from "@/features/conversation/components/all-conversations"
 import { CreateConversationModal } from "@/features/conversation/components/create-conversation-modal"
+import {
+  ModalType,
+  SidebarErrorFallbackProps,
+  SidebarHeaderProps,
+  SidebarSectionProps,
+  WorkspaceChannelsProps,
+} from "@/features/workspaces/types"
 
 import { useChannelId } from "@/hooks/useChannelId"
+import { usePersistedState } from "@/hooks/usePersistedState"
 import { useWorkspaceId } from "@/hooks/useWorkspaceId"
 
-import { ADMIN } from "@/constants"
+import { CHAT_SIDEBAR_ITEMS, STORAGE_KEYS } from "@/constants"
+import { isAdmin } from "@/lib/is-admin"
 
 import { api } from "../../../../convex/_generated/api"
 import { Doc } from "../../../../convex/_generated/dataModel"
 
-const CHAT_SIDEBAR_ITEMS = [
-  {
-    id: "saved",
-    label: "Saved",
-    icon: Bookmark,
-    href: "/chat/saved",
-  },
-  {
-    id: "channels",
-    label: "Channels",
-    icon: HashIcon,
-    href: "/chat/channels",
-  },
-]
-
-export const WorkspaceSidebar = () => {
-  const workspaceId = useWorkspaceId()
-
-  const [channelsOpen, setChannelsOpen] = useState(true)
-  const [conversationsOpen, setConversationsOpen] = useState(true)
-  const [isCreateChannelOpen, setCreateChannelOpen] = useState(false)
-  const [isEditChannelOpen, setEditChannelOpen] = useState(false)
-  const [isDeleteChannelOpen, setDeleteChannelOpen] = useState(false)
-  const [isDirectChatModalOpen, setIsDirectChatModalOpen] = useState(false)
-
-  const [selectedChannel, setSelectedChannel] = useState<Doc<"channel"> | null>(
-    null
+export function WorkspaceSidebar() {
+  const currentWorkspaceId = useWorkspaceId()
+  const [activeModal, setActiveModal] = useState<ModalType>(null)
+  const [selectedChannelForAction, setSelectedChannelForAction] =
+    useState<Doc<"channel"> | null>(null)
+  const [areChannelsExpanded, setAreChannelsExpanded] = usePersistedState(
+    STORAGE_KEYS.CHANNELS_SECTION,
+    true
   )
+  const [areConversationsExpanded, setAreConversationsExpanded] =
+    usePersistedState(STORAGE_KEYS.CONVERSATIONS_SECTION, true)
 
   const {
-    data: channels,
-    isPending: isChannelsPending,
-    error: channelsError,
-  } = useQuery(convexQuery(api.channels.getChannels, { workspaceId }))
-
-  const {
-    data: member,
-    isPending: isMemberLoading,
-    error: memberError,
-  } = useQuery(convexQuery(api.members.currentMember, { workspaceId }))
-
-  const {
-    data: conversations,
-    isPending: isConversationsPending,
-    error: conversationsError,
+    data: workspaceChannels,
+    isPending: isChannelsLoading,
+    error: channelsLoadingError,
   } = useQuery(
-    convexQuery(api.conversations.getAllConversations, { workspaceId })
+    convexQuery(api.channels.getChannels, { workspaceId: currentWorkspaceId })
   )
 
-  useEffect(() => {
-    const stored = localStorage.getItem("sidebar_channels_open")
-    if (stored !== null) {
-      setChannelsOpen(stored === "true")
-    }
-  }, [])
+  const {
+    data: currentWorkspaceMember,
+    isPending: isMembershipLoading,
+    error: membershipLoadingError,
+  } = useQuery(
+    convexQuery(api.members.currentMember, { workspaceId: currentWorkspaceId })
+  )
 
-  useEffect(() => {
-    localStorage.setItem("sidebar_channels_open", String(channelsOpen))
-  }, [channelsOpen])
+  const {
+    data: workspaceConversations,
+    isPending: isConversationsLoading,
+    error: conversationsLoadingError,
+  } = useQuery(
+    convexQuery(api.conversations.getAllConversations, {
+      workspaceId: currentWorkspaceId,
+    })
+  )
 
-  useEffect(() => {
-    const stored = localStorage.getItem("sidebar_conversations_open")
-    if (stored !== null) {
-      setConversationsOpen(stored === "true")
-    }
-  }, [])
+  const isLoading =
+    isChannelsLoading || isMembershipLoading || isConversationsLoading
+  const hasDataLoadingErrors =
+    channelsLoadingError ||
+    membershipLoadingError ||
+    conversationsLoadingError ||
+    !currentWorkspaceMember
 
-  useEffect(() => {
-    localStorage.setItem(
-      "sidebar_conversations_open",
-      String(conversationsOpen)
-    )
-  }, [conversationsOpen])
-
-  if (isChannelsPending || isMemberLoading || isConversationsPending) {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <Loader2 className="text-muted-foreground size-4 animate-spin" />
-      </div>
-    )
+  const handleToggleChannelsSection = () => {
+    setAreChannelsExpanded((prev) => !prev)
   }
 
-  if (channelsError || !channels) {
-    return (
-      <div className="flex h-full flex-col items-center justify-center gap-2">
-        <Button size="icon" variant="destructive">
-          <TriangleAlert className="h-full w-full" />
-        </Button>
-        <span className="text-muted-foreground text-sm font-medium">
-          Failed to load channels
-        </span>
-      </div>
-    )
+  const handleToggleConversationsSection = () => {
+    setAreConversationsExpanded((prev) => !prev)
   }
 
-  if (memberError || !member) {
-    return (
-      <div className="flex h-full flex-col items-center justify-center gap-2">
-        <Button size="icon" variant="destructive">
-          <TriangleAlert className="h-full w-full" />
-        </Button>
-        <span className="text-muted-foreground text-sm font-medium">
-          Failed to load member
-        </span>
-      </div>
-    )
+  const handleSelectChannelForAction = (channel: Doc<"channel">) => {
+    setSelectedChannelForAction(channel)
   }
 
-  if (conversationsError || !conversations) {
-    return (
-      <div className="flex h-full flex-col items-center justify-center gap-2">
-        <Button size="icon" variant="destructive">
-          <TriangleAlert className="h-full w-full" />
-        </Button>
-        <span className="text-muted-foreground text-sm font-medium">
-          Failed to load conversations
-        </span>
-      </div>
-    )
+  if (isLoading) {
+    return <LoadingScreen />
   }
 
-  const isAdmin = member.role === ADMIN
+  if (hasDataLoadingErrors) {
+    return <SidebarErrorFallback errorMessage="Failed to load workspace data" />
+  }
+
+  const isCurrentUserAdmin = isAdmin(currentWorkspaceMember)
 
   return (
     <aside className="flex h-full flex-col">
-      <div className="border-border flex items-center justify-between border-b p-4">
-        <h1 className="text-2xl font-bold">Chat</h1>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="iconSmall">
-              <Plus className="text-muted-foreground size-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="p-2">
-            {isAdmin && (
-              <DropdownMenuItem
-                className="h-10"
-                onClick={() => setCreateChannelOpen(true)}
-              >
-                <HashIcon className="text-muted-foreground size-4" />
-                New Channel
-              </DropdownMenuItem>
-            )}
-            <DropdownMenuItem
-              className="h-10"
-              onClick={() => setIsDirectChatModalOpen(true)}
-            >
-              <MessageSquare className="text-muted-foreground size-4" />
-              New Direct Chat
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-      <nav className="border-border flex flex-col border-b p-2">
-        {CHAT_SIDEBAR_ITEMS.map((item) => (
-          <Button
-            key={item.id}
-            size="lg"
-            className="w-full justify-start"
-            variant="ghost"
-          >
-            <item.icon className="text-muted-foreground size-4" />
-            <span className="text-muted-foreground text-base font-medium">
-              {item.label}
-            </span>
-          </Button>
-        ))}
-      </nav>
+      <SidebarHeader
+        isCurrentUserAdmin={isCurrentUserAdmin}
+        onCreateChannel={() => setActiveModal("createChannel")}
+        onCreateConversation={() => setActiveModal("createConversation")}
+      />
+
+      <SidebarNavigation />
 
       <div className="flex flex-1 flex-col overflow-y-auto">
-        <div className="group flex items-center justify-between p-4 select-none">
-          <div className="flex items-center gap-2">
-            <Hint label="Toggle Channels">
-              <Button
-                variant="outline"
-                size="iconSmall"
-                onClick={() => setChannelsOpen((open) => !open)}
-              >
-                <ChevronDown
-                  className={`text-muted-foreground size-4 transition-transform duration-200 ${channelsOpen ? "rotate-0" : "-rotate-90"}`}
-                />
-              </Button>
-            </Hint>
-            <span className="text-muted-foreground text-sm font-semibold">
-              Channels
-            </span>
-          </div>
-          {isAdmin && (
-            <Hint label="New Channel">
-              <Button
-                variant="outline"
-                size="iconSmall"
-                onClick={() => setCreateChannelOpen(true)}
-              >
-                <Plus className="text-muted-foreground size-4" />
-              </Button>
-            </Hint>
+        <SidebarSection
+          title="Channels"
+          isExpanded={areChannelsExpanded}
+          onToggle={handleToggleChannelsSection}
+          showCreateButton={isCurrentUserAdmin}
+          onCreateAction={() => setActiveModal("createChannel")}
+          createButtonLabel="New Channel"
+        >
+          {areChannelsExpanded && (
+            <WorkspaceChannelsList
+              workspaceChannels={workspaceChannels}
+              isCurrentUserAdmin={isCurrentUserAdmin}
+              onSetSelectedChannel={handleSelectChannelForAction}
+              onOpenEditModal={() => setActiveModal("editChannel")}
+              onOpenDeleteModal={() => setActiveModal("deleteChannel")}
+            />
           )}
-        </div>
-        {channelsOpen && (
-          <AllChannels
-            channels={channels}
-            setEditChannelOpen={setEditChannelOpen}
-            setDeleteChannelOpen={setDeleteChannelOpen}
-            setSelectedChannel={setSelectedChannel}
-            isAdmin={isAdmin}
-          />
-        )}
+        </SidebarSection>
 
-        <div className="group flex items-center justify-between p-4 select-none">
-          <div className="flex items-center gap-2">
-            <Hint label="Toggle Conversations">
-              <Button
-                variant="outline"
-                size="iconSmall"
-                onClick={() => setConversationsOpen((open) => !open)}
-              >
-                <ChevronDown
-                  className={`text-muted-foreground size-4 transition-transform duration-200 ${conversationsOpen ? "rotate-0" : "-rotate-90"}`}
-                />
-              </Button>
-            </Hint>
-            <span className="text-muted-foreground text-sm font-semibold">
-              Conversations
-            </span>
-          </div>
-          <Hint label="New Conversation">
-            <Button
-              variant="outline"
-              size="iconSmall"
-              onClick={() => setIsDirectChatModalOpen(true)}
-            >
-              <Plus className="text-muted-foreground size-4" />
-            </Button>
-          </Hint>
-        </div>
-        {conversationsOpen && (
-          <AllConversations conversations={conversations} />
-        )}
+        <SidebarSection
+          title="Conversations"
+          isExpanded={areConversationsExpanded}
+          onToggle={handleToggleConversationsSection}
+          showCreateButton={true}
+          onCreateAction={() => setActiveModal("createConversation")}
+          createButtonLabel="New Conversation"
+        >
+          {areConversationsExpanded && (
+            <AllConversations conversations={workspaceConversations} />
+          )}
+        </SidebarSection>
       </div>
+
       <CreateChannelModal
-        open={isCreateChannelOpen}
-        onOpenChange={setCreateChannelOpen}
+        open={activeModal === "createChannel"}
+        onOpenChange={(open) =>
+          open ? setActiveModal("createChannel") : setActiveModal(null)
+        }
       />
-      {selectedChannel && (
+      {selectedChannelForAction && (
         <EditChannelModal
-          open={isEditChannelOpen}
-          onOpenChange={setEditChannelOpen}
-          channel={selectedChannel}
+          open={activeModal === "editChannel"}
+          onOpenChange={(open) =>
+            open ? setActiveModal("editChannel") : setActiveModal(null)
+          }
+          channel={selectedChannelForAction}
         />
       )}
-      {selectedChannel && (
+      {selectedChannelForAction && (
         <DeleteChannelModal
-          open={isDeleteChannelOpen}
-          onOpenChange={setDeleteChannelOpen}
-          channel={selectedChannel}
+          open={activeModal === "deleteChannel"}
+          onOpenChange={(open) =>
+            open ? setActiveModal("deleteChannel") : setActiveModal(null)
+          }
+          channel={selectedChannelForAction}
         />
       )}
       <CreateConversationModal
-        open={isDirectChatModalOpen}
-        onOpenChange={setIsDirectChatModalOpen}
+        open={activeModal === "createConversation"}
+        onOpenChange={(open) =>
+          open ? setActiveModal("createConversation") : setActiveModal(null)
+        }
       />
     </aside>
   )
 }
 
-export function AllChannels({
-  channels,
-  setEditChannelOpen,
-  setDeleteChannelOpen,
-  setSelectedChannel,
-  isAdmin,
-}: {
-  channels: Doc<"channel">[]
-  setEditChannelOpen: (open: boolean) => void
-  setDeleteChannelOpen: (open: boolean) => void
-  setSelectedChannel: (channel: Doc<"channel">) => void
-  isAdmin: boolean
-}) {
+function WorkspaceChannelsList({
+  workspaceChannels,
+  isCurrentUserAdmin,
+  onSetSelectedChannel,
+  onOpenEditModal,
+  onOpenDeleteModal,
+}: WorkspaceChannelsProps) {
   const router = useRouter()
-  const workspaceId = useWorkspaceId()
-  const channelId = useChannelId()
+  const currentWorkspaceId = useWorkspaceId()
+  const currentChannelId = useChannelId()
+
+  const handleChannelNavigation = (channelId: string) => {
+    router.push(`/workspace/${currentWorkspaceId}/channel/${channelId}`)
+  }
 
   const handleChannelAction = (
     channel: Doc<"channel">,
     action: "edit" | "delete"
   ) => {
-    setSelectedChannel(channel)
+    onSetSelectedChannel(channel)
     if (action === "edit") {
-      setEditChannelOpen(true)
+      onOpenEditModal()
     } else {
-      setDeleteChannelOpen(true)
+      onOpenDeleteModal()
     }
   }
 
   return (
     <ul className="space-y-1 px-2">
-      {channels?.map((channel) => (
+      {workspaceChannels?.map((channel) => (
         <li
           key={channel._id}
           className="group relative flex items-center justify-between gap-2"
         >
           <Button
-            onClick={() =>
-              router.push(`/workbench/${workspaceId}/channel/${channel._id}`)
-            }
+            onClick={() => handleChannelNavigation(channel._id)}
             size="lg"
-            variant={channelId === channel._id ? "secondary" : "ghost"}
+            variant={currentChannelId === channel._id ? "secondary" : "ghost"}
             className="w-full justify-start"
           >
             <HashIcon className="text-muted-foreground size-4" />
@@ -356,8 +240,7 @@ export function AllChannels({
             </span>
           </Button>
 
-          {/* Only show dropdown if not on this channel's page */}
-          {channelId !== channel._id && (
+          {currentChannelId === channel._id && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -374,7 +257,7 @@ export function AllChannels({
                 side="bottom"
                 align="start"
               >
-                {isAdmin && (
+                {isCurrentUserAdmin && (
                   <>
                     <DropdownMenuItem
                       onClick={() => handleChannelAction(channel, "edit")}
@@ -398,5 +281,108 @@ export function AllChannels({
         </li>
       ))}
     </ul>
+  )
+}
+
+function SidebarErrorFallback({ errorMessage }: SidebarErrorFallbackProps) {
+  return (
+    <div className="flex h-full flex-col items-center justify-center gap-2">
+      <Button size="icon" variant="destructive">
+        <TriangleAlert className="h-full w-full" />
+      </Button>
+      <span className="text-muted-foreground text-sm font-medium">
+        {errorMessage}
+      </span>
+    </div>
+  )
+}
+
+function SidebarHeader({
+  isCurrentUserAdmin,
+  onCreateChannel,
+  onCreateConversation,
+}: SidebarHeaderProps) {
+  return (
+    <div className="border-border flex h-[49px] items-center justify-between border-b px-4">
+      <h1 className="text-xl font-semibold">Chat</h1>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" size="iconSmall">
+            <Plus className="text-muted-foreground size-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="p-2">
+          {isCurrentUserAdmin && (
+            <DropdownMenuItem className="h-10" onClick={onCreateChannel}>
+              <HashIcon className="text-muted-foreground size-4" />
+              New Channel
+            </DropdownMenuItem>
+          )}
+          <DropdownMenuItem className="h-10" onClick={onCreateConversation}>
+            <MessageSquare className="text-muted-foreground size-4" />
+            New Direct Chat
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  )
+}
+
+function SidebarNavigation() {
+  return (
+    <nav className="border-border flex flex-col border-b p-2">
+      {CHAT_SIDEBAR_ITEMS.map((navigationItem) => (
+        <Button
+          key={navigationItem.id}
+          size="lg"
+          className="w-full justify-start"
+          variant="ghost"
+        >
+          <navigationItem.icon className="text-muted-foreground size-4" />
+          <span className="text-muted-foreground text-base font-medium">
+            {navigationItem.label}
+          </span>
+        </Button>
+      ))}
+    </nav>
+  )
+}
+
+function SidebarSection({
+  title,
+  isExpanded,
+  onToggle,
+  showCreateButton,
+  onCreateAction,
+  createButtonLabel,
+  children,
+}: SidebarSectionProps) {
+  return (
+    <div>
+      <div className="group flex items-center justify-between p-4 select-none">
+        <div className="flex items-center gap-2">
+          <Hint label={`Toggle ${title}`}>
+            <Button variant="outline" size="iconSmall" onClick={onToggle}>
+              <ChevronDown
+                className={`text-muted-foreground size-4 transition-transform duration-200 ${
+                  isExpanded ? "rotate-0" : "-rotate-90"
+                }`}
+              />
+            </Button>
+          </Hint>
+          <span className="text-muted-foreground text-sm font-semibold">
+            {title}
+          </span>
+        </div>
+        {showCreateButton && (
+          <Hint label={createButtonLabel}>
+            <Button variant="outline" size="iconSmall" onClick={onCreateAction}>
+              <Plus className="text-muted-foreground size-4" />
+            </Button>
+          </Hint>
+        )}
+      </div>
+      {children}
+    </div>
   )
 }

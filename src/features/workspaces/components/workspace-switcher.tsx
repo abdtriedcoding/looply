@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
-import { useCreateWorkspaceModal } from "@/features/workspaces/store/useCreateWorkspaceModal"
+import { useCreateWorkspaceModal } from "@/features/workspaces/store/use-createworkspace-modal"
 
 import { Doc } from "../../../../convex/_generated/dataModel"
 

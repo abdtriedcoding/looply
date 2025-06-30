@@ -1,5 +1,5 @@
 import { REGEXP_ONLY_DIGITS_AND_CHARS } from "input-otp"
-import { Home, ListTodo } from "lucide-react"
+import { Bookmark, HashIcon, Home, ListTodo } from "lucide-react"
 
 export const MESSAGE_COMPACT_TIME_WINDOW_MINUTES = 5 as const
 
@@ -20,3 +20,23 @@ export const SIDEBAR_ITEMS = [
   { icon: Home, label: "Home", href: "/" },
   { icon: ListTodo, label: "Board", href: "/board" },
 ]
+
+export const CHAT_SIDEBAR_ITEMS = [
+  {
+    id: "saved",
+    label: "Saved",
+    icon: Bookmark,
+    href: "/chat/saved",
+  },
+  {
+    id: "channels",
+    label: "Channels",
+    icon: HashIcon,
+    href: "/chat/channels",
+  },
+]
+
+export const STORAGE_KEYS = {
+  CHANNELS_SECTION: "sidebar_channels_open",
+  CONVERSATIONS_SECTION: "sidebar_conversations_open",
+} as const

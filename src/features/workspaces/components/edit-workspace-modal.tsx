@@ -24,7 +24,7 @@ import { Input } from "@/components/ui/input"
 import {
   EditWorkspaceForm,
   editWorkspaceFormSchema,
-} from "@/features/workspaces/validation/workspaceSchemas"
+} from "@/features/workspaces/validation/workspace-schemas"
 
 import { api } from "../../../../convex/_generated/api"
 import { Doc } from "../../../../convex/_generated/dataModel"

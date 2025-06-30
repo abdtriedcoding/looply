@@ -1,7 +1,10 @@
 "use client"
 
+import { useConvexMutation } from "@convex-dev/react-query"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { useMutation } from "@tanstack/react-query"
 import { useForm } from "react-hook-form"
+import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -22,12 +25,14 @@ import {
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 
-import { useEditChannel } from "@/features/channels/api/useEditChannel"
 import {
   EditChannelForm,
   editChannelFormSchema,
-} from "@/features/channels/validation/channelSchemas"
+} from "@/features/channels/validation/channel-schemas"
 
+import { handleConvexMutationError } from "@/lib/convex-mutation-error"
+
+import { api } from "../../../../convex/_generated/api"
 import { Doc } from "../../../../convex/_generated/dataModel"
 
 export function EditChannelModal({
@@ -39,9 +44,6 @@ export function EditChannelModal({
   onOpenChange: (open: boolean) => void
   channel: Doc<"channel">
 }) {
-  const { mutate: updateChannel, isPending: isUpdateChannelPending } =
-    useEditChannel()
-
   const form = useForm<EditChannelForm>({
     resolver: zodResolver(editChannelFormSchema),
     defaultValues: {
@@ -55,11 +57,34 @@ export function EditChannelModal({
     onOpenChange(false)
   }
 
+  const { mutate: updateChannel, isPending: isUpdateChannelPending } =
+    useMutation({
+      mutationFn: useConvexMutation(api.channels.updateChannel),
+    })
+
   function handleSubmit(values: EditChannelForm) {
-    updateChannel(
-      { ...values, workspaceId: channel.workspaceId, channelId: channel._id },
-      { onSuccess: () => handleClose() }
-    )
+    const validationResult = editChannelFormSchema.safeParse(values)
+
+    if (!validationResult.success) {
+      toast.error("Invalid form data")
+      return
+    }
+
+    const payload = {
+      ...validationResult.data,
+      workspaceId: channel.workspaceId,
+      channelId: channel._id,
+    }
+
+    updateChannel(payload, {
+      onSuccess: () => {
+        toast.success(`Channel "${channel.name}" updated`)
+        handleClose()
+      },
+      onError: (err: Error) => {
+        toast.error(handleConvexMutationError(err, "Failed to update channel"))
+      },
+    })
   }
 
   return (

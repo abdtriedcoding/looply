@@ -24,11 +24,11 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 
-import { useCreateWorkspaceModal } from "@/features/workspaces/store/useCreateWorkspaceModal"
+import { useCreateWorkspaceModal } from "@/features/workspaces/store/use-createworkspace-modal"
 import {
   CreateWorkspaceForm,
   createWorkspaceFormSchema,
-} from "@/features/workspaces/validation/workspaceSchemas"
+} from "@/features/workspaces/validation/workspace-schemas"
 
 import { handleConvexMutationError } from "@/lib/convex-mutation-error"
 
@@ -65,9 +65,16 @@ export function CreateWorkspaceModal({
   }
 
   const handleSubmit = (values: CreateWorkspaceForm) => {
-    createWorkspace(values, {
+    const validationResult = createWorkspaceFormSchema.safeParse(values)
+
+    if (!validationResult.success) {
+      toast.error("Invalid form data")
+      return
+    }
+
+    createWorkspace(validationResult.data, {
       onSuccess: (id) => {
-        toast.success(`Workspace "${values.name}" created`)
+        toast.success(`Workspace "${validationResult.data.name}" created`)
         router.push(`/workspace/${id}`)
         handleModalClose()
       },
