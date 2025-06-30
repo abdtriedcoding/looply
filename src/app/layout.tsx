@@ -31,15 +31,17 @@ export default function RootLayout({
       <html lang="en" suppressHydrationWarning>
         <body className={`${font.className} antialiased`}>
           <ConvexClientProvider>
-            <ThemeProvider
-              attribute="class"
-              defaultTheme="system"
-              enableSystem
-              disableTransitionOnChange
-            >
-              <TanstackProvider>{children}</TanstackProvider>
-              <Toaster richColors position="bottom-right" />
-            </ThemeProvider>
+            <TanstackProvider>
+              <ThemeProvider
+                attribute="class"
+                defaultTheme="system"
+                enableSystem
+                disableTransitionOnChange
+              >
+                {children}
+                <Toaster richColors position="bottom-right" />
+              </ThemeProvider>
+            </TanstackProvider>
           </ConvexClientProvider>
         </body>
       </html>
