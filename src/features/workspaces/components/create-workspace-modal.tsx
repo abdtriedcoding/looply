@@ -1,6 +1,7 @@
 import { useConvexMutation } from "@convex-dev/react-query"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation } from "@tanstack/react-query"
+import { useRouter } from "next/navigation"
 
 import { useForm } from "react-hook-form"
 import { toast } from "sonner"
@@ -26,18 +27,20 @@ import {
 import { Input } from "@/components/ui/input"
 
 import { api } from "../../../../convex/_generated/api"
+import { useCreateWorkspaceModalStore } from "../store/useCreateWorkspaceModal"
 
 export const createWorkspaceSchema = z.object({
   name: z.string().min(2).max(50),
 })
 
 export function CreateWorkspaceModal({
-  isOpen,
-  onOpenChange,
+  isModalClosable,
 }: {
-  isOpen: boolean
-  onOpenChange: (open: boolean) => void
+  isModalClosable: boolean
 }) {
+  const router = useRouter()
+  const { isOpen, setIsOpen } = useCreateWorkspaceModalStore()
+
   const { mutateAsync, isPending } = useMutation({
     mutationFn: useConvexMutation(api.workspaces.createWorkspace),
   })
@@ -53,8 +56,9 @@ export function CreateWorkspaceModal({
     const promise = mutateAsync(values)
     toast.promise(promise, {
       loading: "Loading...",
-      success: () => {
-        onOpenChange(false)
+      success: (workbenchId) => {
+        setIsOpen(false)
+        router.push(`/workbench/${workbenchId}`)
         return `${values.name} workspace has been added`
       },
       error: () => {
@@ -64,8 +68,8 @@ export function CreateWorkspaceModal({
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent showCloseButton={false}>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogContent showCloseButton={isModalClosable}>
         <DialogHeader>
           <DialogTitle>Create a New Workspace</DialogTitle>
           <DialogDescription>

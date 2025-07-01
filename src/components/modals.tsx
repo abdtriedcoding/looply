@@ -1,0 +1,24 @@
+"use client"
+
+import { useEffect, useState } from "react"
+
+import { CreateWorkspaceModal } from "@/features/workspaces/components/create-workspace-modal"
+
+import { useWorkspaceId } from "@/hooks/useWorkspaceId"
+
+export function Modals() {
+  const [isMounted, setIsMounted] = useState(false)
+  const workspaceId = useWorkspaceId()
+  const isModalClosable = !!workspaceId
+
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
+
+  if (!isMounted) return null
+  return (
+    <>
+      <CreateWorkspaceModal isModalClosable={isModalClosable} />
+    </>
+  )
+}
