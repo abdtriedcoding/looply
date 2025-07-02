@@ -26,6 +26,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
+import { useDeleteWorkspaceModalStore } from "@/features/workspaces/store/useDeleteWorkspaceModal"
 import { useEditWorkspaceModalStore } from "@/features/workspaces/store/useEditWorkspaceModal"
 
 import { api } from "../../convex/_generated/api"
@@ -42,6 +43,10 @@ export function NavUser({
   const { signOut } = useAuthActions()
   const router = useRouter()
   const { setIsOpen, setData } = useEditWorkspaceModalStore()
+  const {
+    setIsOpen: setDeleteWorkspaceModalOpen,
+    setData: setDeleteWorkspaceModalData,
+  } = useDeleteWorkspaceModalStore()
 
   if (isWorkspaceLoading || isPending)
     return (
@@ -101,7 +106,13 @@ export function NavUser({
             <BadgeCheck className="mr-2 h-4 w-4" />
             Edit Workspace
           </DropdownMenuItem>
-          <DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => {
+              if (!workspace) return
+              setDeleteWorkspaceModalOpen(true)
+              setDeleteWorkspaceModalData(workspace._id)
+            }}
+          >
             <Trash className="mr-2 h-4 w-4" />
             Delete Workspace
           </DropdownMenuItem>
