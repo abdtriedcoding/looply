@@ -1,7 +1,7 @@
 import { useConvexMutation } from "@convex-dev/react-query"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation } from "@tanstack/react-query"
-import { useRouter } from "next/navigation"
+import { useEffect } from "react"
 
 import { useForm } from "react-hook-form"
 import { toast } from "sonner"
@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -27,55 +26,65 @@ import {
 import { Input } from "@/components/ui/input"
 
 import { api } from "../../../../convex/_generated/api"
-import { useCreateWorkspaceModalStore } from "../store/useCreateWorkspaceModal"
+import { useEditWorkspaceModalStore } from "../store/useEditWorkspaceModal"
 
-export const createWorkspaceSchema = z.object({
+export const editWorkspaceSchema = z.object({
   name: z.string().min(2).max(50),
+  imageUrl: z.string().optional(),
 })
 
-export function CreateWorkspaceModal({
-  isModalClosable = true,
-}: {
-  isModalClosable: boolean
-}) {
-  const router = useRouter()
-  const { isOpen, setIsOpen } = useCreateWorkspaceModalStore()
+export function EditWorkspaceModal() {
+  const { isOpen, setIsOpen, data } = useEditWorkspaceModalStore()
 
   const { mutateAsync, isPending } = useMutation({
-    mutationFn: useConvexMutation(api.workspaces.createWorkspace),
+    mutationFn: useConvexMutation(api.workspaces.updateWorkspace),
   })
 
-  const form = useForm<z.infer<typeof createWorkspaceSchema>>({
-    resolver: zodResolver(createWorkspaceSchema),
+  const form = useForm<z.infer<typeof editWorkspaceSchema>>({
+    resolver: zodResolver(editWorkspaceSchema),
     defaultValues: {
-      name: "",
+      name: data?.name || "",
+      imageUrl: data?.imageUrl || "",
     },
   })
 
-  function onSubmit(values: z.infer<typeof createWorkspaceSchema>) {
-    const promise = mutateAsync(values)
+  useEffect(() => {
+    if (data) {
+      form.reset({
+        name: data.name || "",
+        imageUrl: data.imageUrl || "",
+      })
+    }
+  }, [data, form])
+
+  const handleClose = () => {
+    setIsOpen(false)
+    form.reset()
+  }
+
+  function onSubmit(values: z.infer<typeof editWorkspaceSchema>) {
+    if (!data) return
+    const promise = mutateAsync({
+      id: data._id,
+      ...values,
+    })
     toast.promise(promise, {
       loading: "Loading...",
-      success: (workbenchId) => {
-        setIsOpen(false)
-        router.push(`/workbench/${workbenchId}`)
-        return `${values.name} workspace has been added`
+      success: () => {
+        handleClose()
+        return `${values.name} workspace has been updated`
       },
       error: () => {
-        return "Failed to create workspace"
+        return "Failed to update workspace"
       },
     })
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent showCloseButton={isModalClosable}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent>
         <DialogHeader>
-          <DialogTitle>Create a New Workspace</DialogTitle>
-          <DialogDescription>
-            Workspaces help you organize your team, projects, and tools in one
-            place.
-          </DialogDescription>
+          <DialogTitle>Edit Workspace</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
@@ -95,9 +104,22 @@ export function CreateWorkspaceModal({
                 </FormItem>
               )}
             />
+            <FormField
+              control={form.control}
+              name="imageUrl"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Workspace Image</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <DialogFooter>
               <Button type="submit" disabled={isPending}>
-                Create Workspace
+                Save Changes
               </Button>
             </DialogFooter>
           </form>

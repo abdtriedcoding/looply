@@ -25,6 +25,7 @@ export const getWorkspaces = query({
 export const createWorkspace = mutation({
   args: {
     name: v.string(),
+    imageUrl: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx)
@@ -36,6 +37,7 @@ export const createWorkspace = mutation({
 
     const workspaceId = await ctx.db.insert("workspace", {
       name: args.name,
+      imageUrl: args.imageUrl,
       userId,
       joinCode: generateWorkspaceCode(),
     })
@@ -55,5 +57,27 @@ export const getWorkspaceById = query({
 
     const workspace = await ctx.db.get(args.id)
     return workspace
+  },
+})
+
+export const updateWorkspace = mutation({
+  args: {
+    id: v.id("workspace"),
+    name: v.string(),
+    imageUrl: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx)
+    if (!userId) return
+
+    const result = createWorkspaceSchema.safeParse(args)
+
+    if (!result.success) return
+
+    const workspaceId = await ctx.db.patch(args.id, {
+      name: args.name,
+      imageUrl: args.imageUrl,
+    })
+    return workspaceId
   },
 })

@@ -30,7 +30,7 @@ export default function Home() {
   return (
     <div className="flex h-screen items-center justify-center">
       {isOpen ? (
-        <CreateWorkspaceModal isOpen={isOpen} onOpenChange={setIsOpen} />
+        <CreateWorkspaceModal isModalClosable={false} />
       ) : (
         <Loader2 className="size-6 animate-spin" />
       )}
