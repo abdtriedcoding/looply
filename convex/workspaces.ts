@@ -2,7 +2,12 @@ import { getAuthUserId } from "@convex-dev/auth/server"
 
 import { v } from "convex/values"
 
-import { createWorkspaceSchema } from "../src/features/workspaces/components/create-workspace-modal"
+import {
+  createWorkspaceArgsSchema,
+  deleteWorkspaceArgsSchema,
+  updateWorkspaceArgsSchema,
+} from "@/features/workspaces/validation/workspaceSchemas"
+
 import { generateWorkspaceCode } from "../src/lib/generate-join-code"
 import { mutation, query } from "./_generated/server"
 
@@ -25,19 +30,17 @@ export const getWorkspaces = query({
 export const createWorkspace = mutation({
   args: {
     name: v.string(),
-    imageUrl: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx)
     if (!userId) return
 
-    const result = createWorkspaceSchema.safeParse(args)
+    const result = createWorkspaceArgsSchema.safeParse(args)
 
     if (!result.success) return
 
     const workspaceId = await ctx.db.insert("workspace", {
       name: args.name,
-      imageUrl: args.imageUrl,
       userId,
       joinCode: generateWorkspaceCode(),
     })
@@ -70,7 +73,7 @@ export const updateWorkspace = mutation({
     const userId = await getAuthUserId(ctx)
     if (!userId) return
 
-    const result = createWorkspaceSchema.safeParse(args)
+    const result = updateWorkspaceArgsSchema.safeParse(args)
 
     if (!result.success) return
 
@@ -89,6 +92,10 @@ export const deleteWorkspace = mutation({
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx)
     if (!userId) return
+
+    const result = deleteWorkspaceArgsSchema.safeParse(args)
+
+    if (!result.success) return
 
     const workspaceId = await ctx.db.delete(args.id)
     return workspaceId

@@ -32,25 +32,25 @@ import { useEditWorkspaceModalStore } from "@/features/workspaces/store/useEditW
 import { api } from "../../convex/_generated/api"
 import { Doc } from "../../convex/_generated/dataModel"
 
-export function NavUser({
-  workspace,
-  isWorkspaceLoading,
-}: {
+interface NavUserMenuProps {
   workspace: Doc<"workspace"> | null
   isWorkspaceLoading: boolean
-}) {
-  const { data, isPending } = useQuery(convexQuery(api.currentuser.user, {}))
+}
+
+export function NavUser({ workspace, isWorkspaceLoading }: NavUserMenuProps) {
+  const { data: user, isPending } = useQuery(
+    convexQuery(api.currentuser.user, {})
+  )
   const { signOut } = useAuthActions()
   const router = useRouter()
-  const { setIsOpen, setData } = useEditWorkspaceModalStore()
-  const {
-    setIsOpen: setDeleteWorkspaceModalOpen,
-    setData: setDeleteWorkspaceModalData,
-  } = useDeleteWorkspaceModalStore()
+  const { setEditWorkspaceIsOpen, setEditWorkspaceData } =
+    useEditWorkspaceModalStore()
+  const { setDeleteWorkspaceIsOpen, setDeleteWorkspaceData } =
+    useDeleteWorkspaceModalStore()
 
   if (isWorkspaceLoading || isPending)
     return (
-      <Button size="icon" variant="info">
+      <Button size="icon" variant="info" aria-label="Loading user menu">
         <Loader2 className="size-4 animate-spin" />
       </Button>
     )
@@ -59,9 +59,9 @@ export function NavUser({
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button size="icon" variant="info">
-          {data?.name
-            ? data?.name?.charAt(0).toUpperCase()
-            : data?.email?.charAt(0).toUpperCase()}
+          {user?.name
+            ? user.name.charAt(0).toUpperCase()
+            : user?.email?.charAt(0).toUpperCase()}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
@@ -73,34 +73,34 @@ export function NavUser({
         <DropdownMenuLabel className="p-0 font-normal">
           <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
             <Avatar className="h-8 w-8 rounded-lg">
-              <AvatarImage src={data?.image} alt={data?.email} />
+              <AvatarImage src={user?.image} alt={user?.email} />
               <AvatarFallback className="rounded-lg">
-                {data?.name
-                  ? data?.name?.charAt(0).toUpperCase()
-                  : data?.email?.charAt(0).toUpperCase()}
+                {user?.name
+                  ? user.name.charAt(0).toUpperCase()
+                  : user?.email?.charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>
             <div className="grid flex-1 text-left text-sm leading-tight">
-              {data?.name && (
-                <span className="truncate font-medium">{data?.name}</span>
+              {user?.name && (
+                <span className="truncate font-medium">{user.name}</span>
               )}
-              {data?.email && <span className="truncate">{data?.email}</span>}
+              {user?.email && <span className="truncate">{user.email}</span>}
             </div>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem>
+          <DropdownMenuItem disabled>
             <Sparkles className="mr-2 h-4 w-4" />
-            Invite to workspace
+            Invite to workspace {/* TODO: Implement invite functionality */}
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem
             onClick={() => {
-              setIsOpen(true)
-              setData(workspace)
+              setEditWorkspaceIsOpen(true)
+              setEditWorkspaceData(workspace)
             }}
           >
             <BadgeCheck className="mr-2 h-4 w-4" />
@@ -109,8 +109,8 @@ export function NavUser({
           <DropdownMenuItem
             onClick={() => {
               if (!workspace) return
-              setDeleteWorkspaceModalOpen(true)
-              setDeleteWorkspaceModalData(workspace._id)
+              setDeleteWorkspaceIsOpen(true)
+              setDeleteWorkspaceData(workspace._id)
             }}
           >
             <Trash className="mr-2 h-4 w-4" />
@@ -118,7 +118,7 @@ export function NavUser({
           </DropdownMenuItem>
           <DropdownMenuItem>
             <Settings className="mr-2 h-4 w-4" />
-            Account Settings
+            Account Settings {/* TODO: Implement account settings */}
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />

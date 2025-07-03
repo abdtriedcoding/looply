@@ -20,19 +20,23 @@ import { useDeleteWorkspaceModalStore } from "../store/useDeleteWorkspaceModal"
 
 export function DeleteWorkspaceModal() {
   const router = useRouter()
-  const { isOpen, setIsOpen, data } = useDeleteWorkspaceModalStore()
+  const {
+    deleteWorkspaceIsOpen,
+    setDeleteWorkspaceIsOpen,
+    deleteWorkspaceData,
+  } = useDeleteWorkspaceModalStore()
 
   const { mutateAsync, isPending } = useMutation({
     mutationFn: useConvexMutation(api.workspaces.deleteWorkspace),
   })
 
   function handleDelete() {
-    if (!data) return
-    const promise = mutateAsync({ id: data })
+    if (!deleteWorkspaceData) return
+    const promise = mutateAsync({ id: deleteWorkspaceData })
     toast.promise(promise, {
       loading: "Loading...",
       success: () => {
-        setIsOpen(false)
+        setDeleteWorkspaceIsOpen(false)
         router.push("/")
         return "Workspace has been deleted"
       },
@@ -43,7 +47,10 @@ export function DeleteWorkspaceModal() {
   }
 
   return (
-    <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
+    <AlertDialog
+      open={deleteWorkspaceIsOpen}
+      onOpenChange={setDeleteWorkspaceIsOpen}
+    >
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>

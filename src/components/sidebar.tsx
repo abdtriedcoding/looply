@@ -19,20 +19,29 @@ import { api } from "../../convex/_generated/api"
 export function Sidebar() {
   const workspaceId = useWorkspaceId()
 
-  const { data, isPending } = useQuery(
-    convexQuery(api.workspaces.getWorkspaceById, { id: workspaceId })
-  )
+  const { data, isPending } = useQuery({
+    ...convexQuery(api.workspaces.getWorkspaceById, { id: workspaceId }),
+    initialData: null,
+  })
 
   return (
     <div className="flex h-full w-16 flex-col items-center gap-y-4 border-r p-4">
-      <TeamSwitcher workspace={data ?? null} isPending={isPending} />
+      <TeamSwitcher workspace={data} isWorkspaceLoading={isPending} />
       <SidebarItem icon={Home} label="Home" href="/" isActive />
       <SidebarItem icon={MessageSquare} label="Messages" href="/messages" />
       <div className="mt-auto">
-        <NavUser workspace={data ?? null} isWorkspaceLoading={isPending} />
+        <NavUser workspace={data} isWorkspaceLoading={isPending} />
       </div>
     </div>
   )
+}
+
+interface SidebarItemProps {
+  icon: LucideIcon
+  label: string
+  href: string
+  isActive?: boolean
+  disabled?: boolean
 }
 
 function SidebarItem({
@@ -41,13 +50,7 @@ function SidebarItem({
   href,
   isActive,
   disabled,
-}: {
-  icon: LucideIcon
-  label: string
-  href: string
-  isActive?: boolean
-  disabled?: boolean
-}) {
+}: SidebarItemProps) {
   return (
     <Hint label={label} side="right" align="center">
       <Button

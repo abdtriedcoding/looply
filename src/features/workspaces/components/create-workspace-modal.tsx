@@ -28,10 +28,7 @@ import { Input } from "@/components/ui/input"
 
 import { api } from "../../../../convex/_generated/api"
 import { useCreateWorkspaceModalStore } from "../store/useCreateWorkspaceModal"
-
-export const createWorkspaceSchema = z.object({
-  name: z.string().min(2).max(50),
-})
+import { createWorkspaceFormSchema } from "../validation/workspaceSchemas"
 
 export function CreateWorkspaceModal({
   isModalClosable = true,
@@ -39,25 +36,26 @@ export function CreateWorkspaceModal({
   isModalClosable: boolean
 }) {
   const router = useRouter()
-  const { isOpen, setIsOpen } = useCreateWorkspaceModalStore()
+  const { createWorkspaceIsOpen, setCreateWorkspaceIsOpen } =
+    useCreateWorkspaceModalStore()
 
   const { mutateAsync, isPending } = useMutation({
     mutationFn: useConvexMutation(api.workspaces.createWorkspace),
   })
 
-  const form = useForm<z.infer<typeof createWorkspaceSchema>>({
-    resolver: zodResolver(createWorkspaceSchema),
+  const form = useForm<z.infer<typeof createWorkspaceFormSchema>>({
+    resolver: zodResolver(createWorkspaceFormSchema),
     defaultValues: {
       name: "",
     },
   })
 
-  function onSubmit(values: z.infer<typeof createWorkspaceSchema>) {
+  function onSubmit(values: z.infer<typeof createWorkspaceFormSchema>) {
     const promise = mutateAsync(values)
     toast.promise(promise, {
       loading: "Loading...",
       success: (workbenchId) => {
-        setIsOpen(false)
+        setCreateWorkspaceIsOpen(false)
         router.push(`/workbench/${workbenchId}`)
         return `${values.name} workspace has been added`
       },
@@ -68,7 +66,10 @@ export function CreateWorkspaceModal({
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog
+      open={createWorkspaceIsOpen}
+      onOpenChange={setCreateWorkspaceIsOpen}
+    >
       <DialogContent showCloseButton={isModalClosable}>
         <DialogHeader>
           <DialogTitle>Create a New Workspace</DialogTitle>
