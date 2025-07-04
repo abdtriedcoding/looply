@@ -101,3 +101,18 @@ export const deleteWorkspace = mutation({
     return workspaceId
   },
 })
+
+export const updateWorkspaceJoinCode = mutation({
+  args: {
+    id: v.id("workspace"),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx)
+    if (!userId) return
+
+    const workspaceId = await ctx.db.patch(args.id, {
+      joinCode: generateWorkspaceCode(),
+    })
+    return workspaceId
+  },
+})
