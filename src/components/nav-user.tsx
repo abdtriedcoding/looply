@@ -28,6 +28,7 @@ import {
 
 import { useDeleteWorkspaceModalStore } from "@/features/workspaces/store/useDeleteWorkspaceModal"
 import { useEditWorkspaceModalStore } from "@/features/workspaces/store/useEditWorkspaceModal"
+import { useInviteWorkspaceModalStore } from "@/features/workspaces/store/useInviteWorkspaceModal"
 
 import { api } from "../../convex/_generated/api"
 import { Doc } from "../../convex/_generated/dataModel"
@@ -47,6 +48,7 @@ export function NavUser({ workspace, isWorkspaceLoading }: NavUserMenuProps) {
     useEditWorkspaceModalStore()
   const { setDeleteWorkspaceIsOpen, setDeleteWorkspaceData } =
     useDeleteWorkspaceModalStore()
+  const { setInviteWorkspaceIsOpen } = useInviteWorkspaceModalStore()
 
   if (isWorkspaceLoading || isPending)
     return (
@@ -90,9 +92,9 @@ export function NavUser({ workspace, isWorkspaceLoading }: NavUserMenuProps) {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem disabled>
+          <DropdownMenuItem onClick={() => setInviteWorkspaceIsOpen(true)}>
             <Sparkles className="mr-2 h-4 w-4" />
-            Invite to workspace {/* TODO: Implement invite functionality */}
+            Invite to workspace
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
