@@ -55,7 +55,7 @@ export function InviteWorkspaceModal() {
 
   const handleCopy = async () => {
     setIsCopied(true)
-    const link = `${origin}/join?code=${data?.joinCode}`
+    const link = `${origin}/join/${workspaceId}`
     await navigator.clipboard.writeText(link)
     toast.success("Link copied to clipboard")
     setTimeout(() => {
