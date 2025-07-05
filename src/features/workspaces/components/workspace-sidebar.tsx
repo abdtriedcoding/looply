@@ -24,6 +24,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 
 import { useCreateChannelModalStore } from "@/features/channels/store/useCreateChannelModal"
+import { useEditChannelModalStore } from "@/features/channels/store/useEditChannelModal"
 
 import { useWorkspaceId } from "@/hooks/useWorkspaceId"
 
@@ -117,7 +118,12 @@ export const WorkspaceSidebar = () => {
               Channels
             </span>
           </div>
-          <Button variant="outline" size="icon" className="h-7 w-7">
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-7 w-7"
+            onClick={() => setCreateChannelIsOpen(true)}
+          >
             <Plus className="h-4 w-4" />
           </Button>
         </div>
@@ -129,6 +135,7 @@ export const WorkspaceSidebar = () => {
 
 export function AllChannels() {
   const workspaceId = useWorkspaceId()
+  const { setEditChannelIsOpen } = useEditChannelModalStore()
 
   const { data, isPending } = useQuery({
     ...convexQuery(api.channels.getChannels, { workspaceId }),
@@ -183,19 +190,22 @@ export function AllChannels() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent
-              className="w-32 rounded-lg shadow-lg"
+              className="rounded-lg shadow-lg"
               side="bottom"
-              align="end"
+              align="start"
             >
-              <DropdownMenuItem className="cursor-pointer">
-                <span>Open</span>
+              <DropdownMenuItem
+                className="cursor-pointer"
+                onClick={() => setEditChannelIsOpen(true)}
+              >
+                Edit channel
               </DropdownMenuItem>
               <DropdownMenuItem className="cursor-pointer">
-                <span>Share</span>
+                Delete channel
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem className="text-destructive focus:bg-destructive/10 cursor-pointer">
-                <span>Delete</span>
+                Leave channel
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
