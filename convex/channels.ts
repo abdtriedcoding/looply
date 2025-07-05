@@ -128,3 +128,33 @@ export const updateChannel = mutation({
     return updatedChannel
   },
 })
+
+export const deleteChannel = mutation({
+  args: {
+    workspaceId: v.id("workspace"),
+    channelId: v.id("channel"),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx)
+    if (!userId) return { error: "Not authenticated" }
+
+    const workspace = await ctx.db.get(args.workspaceId)
+    if (!workspace) return { error: "Workspace not found" }
+
+    const member = await ctx.db
+      .query("workspaceMember")
+      .withIndex("by_workspace_id_user_id", (q) =>
+        q.eq("workspaceId", args.workspaceId).eq("userId", userId)
+      )
+      .unique()
+    if (!member) {
+      return { error: "Unauthorized" }
+    }
+
+    const channel = await ctx.db.get(args.channelId)
+    if (!channel) return { error: "Channel not found" }
+
+    const deletedChannelId = await ctx.db.delete(args.channelId)
+    return deletedChannelId
+  },
+})

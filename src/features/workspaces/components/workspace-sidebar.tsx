@@ -24,6 +24,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 
 import { useCreateChannelModalStore } from "@/features/channels/store/useCreateChannelModal"
+import { useDeleteChannelModalStore } from "@/features/channels/store/useDeleteChannelModal"
 import { useEditChannelModalStore } from "@/features/channels/store/useEditChannelModal"
 
 import { useWorkspaceId } from "@/hooks/useWorkspaceId"
@@ -136,6 +137,7 @@ export const WorkspaceSidebar = () => {
 export function AllChannels() {
   const workspaceId = useWorkspaceId()
   const { setEditChannelIsOpen } = useEditChannelModalStore()
+  const { setDeleteChannelIsOpen } = useDeleteChannelModalStore()
 
   const { data, isPending } = useQuery({
     ...convexQuery(api.channels.getChannels, { workspaceId }),
@@ -194,13 +196,10 @@ export function AllChannels() {
               side="bottom"
               align="start"
             >
-              <DropdownMenuItem
-                className="cursor-pointer"
-                onClick={() => setEditChannelIsOpen(true)}
-              >
+              <DropdownMenuItem onClick={() => setEditChannelIsOpen(true)}>
                 Edit channel
               </DropdownMenuItem>
-              <DropdownMenuItem className="cursor-pointer">
+              <DropdownMenuItem onClick={() => setDeleteChannelIsOpen(true)}>
                 Delete channel
               </DropdownMenuItem>
               <DropdownMenuSeparator />

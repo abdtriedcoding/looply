@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react"
 
 import { CreateChannelModal } from "@/features/channels/components/create-channel-modal"
+import { DeleteChannelModal } from "@/features/channels/components/delete-channel-modal"
 import { EditChannelModal } from "@/features/channels/components/edit-channel-modal"
 import { CreateWorkspaceModal } from "@/features/workspaces/components/create-workspace-modal"
 import { DeleteWorkspaceModal } from "@/features/workspaces/components/delete-workspace-modal"
@@ -33,6 +34,7 @@ export function Modals(): React.ReactNode {
       <InviteWorkspaceModal />
       <CreateChannelModal />
       <EditChannelModal />
+      <DeleteChannelModal />
     </>
   )
 }
