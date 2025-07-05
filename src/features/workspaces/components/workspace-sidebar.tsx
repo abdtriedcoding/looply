@@ -4,7 +4,14 @@ import { useEffect, useState } from "react"
 
 import { convexQuery } from "@convex-dev/react-query"
 import { useQuery } from "@tanstack/react-query"
-import { Bookmark, ChevronDown, Ellipsis, HashIcon, Plus } from "lucide-react"
+import {
+  Bookmark,
+  ChevronDown,
+  Ellipsis,
+  HashIcon,
+  MessageSquare,
+  Plus,
+} from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -15,6 +22,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Skeleton } from "@/components/ui/skeleton"
+
+import { useCreateChannelModalStore } from "@/features/channels/store/useCreateChannelModal"
 
 import { useWorkspaceId } from "@/hooks/useWorkspaceId"
 
@@ -37,6 +46,7 @@ const CHAT_SIDEBAR_ITEMS = [
 
 export const WorkspaceSidebar = () => {
   const [channelsOpen, setChannelsOpen] = useState(true)
+  const { setCreateChannelIsOpen } = useCreateChannelModalStore()
 
   useEffect(() => {
     const stored = localStorage.getItem("sidebar_channels_open")
@@ -53,9 +63,26 @@ export const WorkspaceSidebar = () => {
     <aside className="flex h-full flex-col">
       <div className="border-border flex items-center justify-between border-b px-6 py-5">
         <h1 className="text-2xl font-bold tracking-tight">Chat</h1>
-        <Button variant="outline" size="icon" className="h-9 w-9">
-          <Plus className="h-5 w-5" />
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="icon" className="h-9 w-9">
+              <Plus className="h-5 w-5" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="p-2">
+            <DropdownMenuItem
+              className="h-10"
+              onClick={() => setCreateChannelIsOpen(true)}
+            >
+              <HashIcon className="h-5 w-5" />
+              <span>New Channel</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem className="h-10">
+              <MessageSquare className="h-5 w-5" />
+              <span>New Direct Chat</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <nav className="border-border flex flex-col border-b px-3 py-4">
