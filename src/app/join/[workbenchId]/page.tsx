@@ -18,45 +18,57 @@ import {
 
 import { useWorkspaceId } from "@/hooks/useWorkspaceId"
 
+import { handleConvexMutationError } from "@/lib/convex-mutation-error"
+
 import { api } from "../../../../convex/_generated/api"
 
-export default function JoinWorkspace() {
+export default function JoinWorkspacePage() {
+  const router = useRouter()
   const workspaceId = useWorkspaceId()
 
-  const router = useRouter()
-
-  const { data, isPending } = useQuery(
-    convexQuery(api.workspaces.getWorkspaceById, { id: workspaceId })
+  const { data: workspace, isPending: isWorkspaceLoading } = useQuery(
+    convexQuery(api.workspaces.getWorkspaceInfo, { id: workspaceId })
   )
 
-  const { mutateAsync, isPending: isJoining } = useMutation({
+  const { mutateAsync: joinWorkspace, isPending: isJoining } = useMutation({
     mutationFn: useConvexMutation(api.workspaces.joinWorkspace),
+    onError: (err: Error) => {
+      toast.error(handleConvexMutationError(err, "Failed to join workspace"))
+    },
+    onSuccess: () => {
+      toast.success(`Joined workspace ${workspace?.name}`)
+      router.replace(`/workbench/${workspaceId}`)
+    },
   })
 
-  if (isPending)
+  if (isWorkspaceLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
-        <Loader2 className="animate-spin" />
+        <Loader2
+          className="size-6 animate-spin"
+          aria-label="Loading workspace"
+        />
       </div>
     )
+  }
 
-  const handleComplete = async (code: string) => {
-    if (code !== data?.joinCode) {
-      toast.error("Invalid join code")
-      return
-    }
-
-    try {
-      const result = await mutateAsync({ id: workspaceId, joinCode: code })
-      if (result && typeof result === "object" && "error" in result) {
-        toast.error(result.error)
-        return
-      }
-      toast.success(`Joined workspace ${data?.name}`)
-      router.push(`/workbench/${workspaceId}`)
-    } catch {
-      toast.error("Failed to join workspace")
-    }
+  if (!workspace) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="flex flex-col items-center gap-y-4">
+          <h1 className="text-destructive text-xl font-bold">
+            Workspace Not Found
+          </h1>
+          <p className="text-md text-muted-foreground">
+            The workspace you are trying to join does not exist or you are not
+            authenticated.
+          </p>
+          <Button asChild variant="secondary" aria-label="Back to Home">
+            <Link href="/">Back to Home</Link>
+          </Button>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -64,7 +76,8 @@ export default function JoinWorkspace() {
       <div className="flex max-w-md flex-col items-center justify-center gap-y-4">
         <div className="flex flex-col items-center justify-center gap-y-2">
           <h1 className="text-2xl font-bold">
-            Join workspace - <span className="text-primary">{data?.name}</span>
+            Join workspace -{" "}
+            <span className="text-primary">{workspace.name}</span>
           </h1>
           <p className="text-md text-muted-foreground">
             Enter the workspace code to join
@@ -73,8 +86,11 @@ export default function JoinWorkspace() {
         <InputOTP
           maxLength={6}
           pattern={REGEXP_ONLY_DIGITS_AND_CHARS}
-          onComplete={handleComplete}
+          onComplete={(code: string) =>
+            joinWorkspace({ id: workspaceId, joinCode: code })
+          }
           disabled={isJoining}
+          aria-label="Workspace join code"
         >
           <InputOTPGroup>
             {Array.from({ length: 6 }, (_, index) => (
@@ -83,7 +99,13 @@ export default function JoinWorkspace() {
           </InputOTPGroup>
         </InputOTP>
       </div>
-      <Button size="lg" asChild variant="secondary" disabled={isJoining}>
+      <Button
+        size="lg"
+        asChild
+        variant="secondary"
+        disabled={isJoining}
+        aria-label="Back to Home"
+      >
         <Link href="/">Back to Home</Link>
       </Button>
     </div>
