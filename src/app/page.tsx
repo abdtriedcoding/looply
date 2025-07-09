@@ -3,37 +3,40 @@
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"
 
+import { convexQuery } from "@convex-dev/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { Loader2 } from "lucide-react"
 
-import { useGetWorkspaces } from "@/features/workspaces/api/useGetWorkspaces"
-import { CreateWorkspaceModal } from "@/features/workspaces/components/create-workspace-modal"
-import { useCreateWorkspaceModalStore } from "@/features/workspaces/store/useCreateWorkspaceModal"
+import { useWorkspaceModalStore } from "@/features/workspaces/store/useWorkspaceModalStore"
 
-export default function Home() {
+import { api } from "../../convex/_generated/api"
+
+export default function HomePage() {
   const router = useRouter()
+  const { isOpen, setIsOpen } = useWorkspaceModalStore()
 
-  const { data: workspaces, isLoading } = useGetWorkspaces()
-  const workbenchId = workspaces?.[0]?._id
-
-  const { isOpen, setIsOpen } = useCreateWorkspaceModalStore()
+  const { data: workspaces, isPending: isWorkspacesLoading } = useQuery(
+    convexQuery(api.workspaces.getWorkspaces, {})
+  )
 
   useEffect(() => {
-    if (isLoading) return
+    if (isWorkspacesLoading) return
 
+    const workbenchId = workspaces?.[0]?._id
     if (workbenchId) {
       router.replace(`/workbench/${workbenchId}`)
     } else if (!isOpen) {
       setIsOpen(true)
     }
-  }, [isLoading, workbenchId, setIsOpen, router, isOpen])
+  }, [isWorkspacesLoading, workspaces, setIsOpen, router, isOpen])
 
-  return (
-    <div className="flex h-screen items-center justify-center">
-      {isOpen ? (
-        <CreateWorkspaceModal isModalClosable={false} />
-      ) : (
+  if (isWorkspacesLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
         <Loader2 className="size-6 animate-spin" />
-      )}
-    </div>
-  )
+      </div>
+    )
+  }
+
+  return null
 }

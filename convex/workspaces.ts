@@ -1,4 +1,5 @@
 import { getAuthUserId } from "@convex-dev/auth/server"
+import { getAllOrThrow } from "convex-helpers/server/relationships"
 import { ConvexError, v } from "convex/values"
 
 import {
@@ -7,7 +8,8 @@ import {
   updateWorkspaceArgsSchema,
 } from "@/features/workspaces/validation/workspaceSchemas"
 
-import { generateWorkspaceCode } from "../src/lib/generate-join-code"
+import { generateWorkspaceCode } from "@/lib/generate-join-code"
+
 import { mutation, query } from "./_generated/server"
 
 export const getWorkspaces = query({
@@ -17,11 +19,17 @@ export const getWorkspaces = query({
       return []
     }
 
-    const workspaces = await ctx.db
-      .query("workspace")
-      .filter((q) => q.eq(q.field("userId"), userId))
-      .order("desc")
+    const members = await ctx.db
+      .query("workspaceMember")
+      .withIndex("by_user_id", (q) => q.eq("userId", userId))
       .collect()
+    if (!members) {
+      return []
+    }
+
+    const workspaceIds = members.map((member) => member.workspaceId)
+
+    const workspaces = await getAllOrThrow(ctx.db, workspaceIds)
     return workspaces
   },
 })
@@ -31,12 +39,11 @@ export const createWorkspace = mutation({
     name: v.string(),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx)
-    if (!userId) return
-
     const result = createWorkspaceArgsSchema.safeParse(args)
+    if (!result.success) throw new ConvexError("Invalid arguments")
 
-    if (!result.success) return
+    const userId = await getAuthUserId(ctx)
+    if (!userId) throw new ConvexError("Not authenticated")
 
     const workspaceId = await ctx.db.insert("workspace", {
       name: args.name,
@@ -51,7 +58,7 @@ export const createWorkspace = mutation({
     })
 
     await ctx.db.insert("channel", {
-      name: "General",
+      name: "general",
       workspaceId,
     })
     return workspaceId
@@ -60,7 +67,7 @@ export const createWorkspace = mutation({
 
 export const getWorkspaceById = query({
   args: {
-    id: v.id("workspace"),
+    workspaceId: v.id("workspace"),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx)
@@ -68,14 +75,24 @@ export const getWorkspaceById = query({
       return null
     }
 
-    const workspace = await ctx.db.get(args.id)
+    const member = await ctx.db
+      .query("workspaceMember")
+      .withIndex("by_workspace_id_user_id", (q) =>
+        q.eq("workspaceId", args.workspaceId).eq("userId", userId)
+      )
+      .unique()
+    if (!member) {
+      return null
+    }
+
+    const workspace = await ctx.db.get(args.workspaceId)
     return workspace
   },
 })
 
 export const getWorkspaceInfo = query({
   args: {
-    id: v.id("workspace"),
+    workspaceId: v.id("workspace"),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx)
@@ -83,75 +100,109 @@ export const getWorkspaceInfo = query({
       return null
     }
 
-    const workspace = await ctx.db.get(args.id)
+    const workspace = await ctx.db.get(args.workspaceId)
     return workspace
   },
 })
 
 export const updateWorkspace = mutation({
   args: {
-    id: v.id("workspace"),
+    workspaceId: v.id("workspace"),
     name: v.string(),
     imageUrl: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx)
-    if (!userId) return
-
     const result = updateWorkspaceArgsSchema.safeParse(args)
+    if (!result.success) throw new ConvexError("Invalid arguments")
 
-    if (!result.success) return
+    const userId = await getAuthUserId(ctx)
+    if (!userId) throw new ConvexError("Not authenticated")
 
-    const workspaceId = await ctx.db.patch(args.id, {
+    const member = await ctx.db
+      .query("workspaceMember")
+      .withIndex("by_workspace_id_user_id", (q) =>
+        q.eq("workspaceId", args.workspaceId).eq("userId", userId)
+      )
+      .unique()
+    if (!member || member.role !== "admin")
+      throw new ConvexError("Unauthorized")
+
+    const workspace = await ctx.db.get(args.workspaceId)
+    if (!workspace) throw new ConvexError("Workspace not found")
+
+    await ctx.db.patch(args.workspaceId, {
       name: args.name,
       imageUrl: args.imageUrl,
     })
-    return workspaceId
+    return args.workspaceId
   },
 })
 
 export const deleteWorkspace = mutation({
   args: {
-    id: v.id("workspace"),
+    workspaceId: v.id("workspace"),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx)
-    if (!userId) return
-
     const result = deleteWorkspaceArgsSchema.safeParse(args)
+    if (!result.success) throw new ConvexError("Invalid arguments")
 
-    if (!result.success) return
+    const userId = await getAuthUserId(ctx)
+    if (!userId) throw new ConvexError("Not authenticated")
 
-    const workspaceId = await ctx.db.delete(args.id)
-    return workspaceId
+    const member = await ctx.db
+      .query("workspaceMember")
+      .withIndex("by_workspace_id_user_id", (q) =>
+        q.eq("workspaceId", args.workspaceId).eq("userId", userId)
+      )
+      .unique()
+    if (!member || member.role !== "admin")
+      throw new ConvexError("Unauthorized")
+
+    const workspace = await ctx.db.get(args.workspaceId)
+    if (!workspace) throw new ConvexError("Workspace not found")
+
+    await ctx.db.delete(args.workspaceId)
+    return args.workspaceId
   },
 })
 
 export const updateWorkspaceJoinCode = mutation({
   args: {
-    id: v.id("workspace"),
+    workspaceId: v.id("workspace"),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx)
-    if (!userId) return
+    if (!userId) throw new ConvexError("Not authenticated")
 
-    const workspaceId = await ctx.db.patch(args.id, {
+    const member = await ctx.db
+      .query("workspaceMember")
+      .withIndex("by_workspace_id_user_id", (q) =>
+        q.eq("workspaceId", args.workspaceId).eq("userId", userId)
+      )
+      .unique()
+    if (!member || member.role !== "admin")
+      throw new ConvexError("Unauthorized")
+
+    const workspace = await ctx.db.get(args.workspaceId)
+    if (!workspace) throw new ConvexError("Workspace not found")
+
+    await ctx.db.patch(args.workspaceId, {
       joinCode: generateWorkspaceCode(),
     })
-    return workspaceId
+    return args.workspaceId
   },
 })
 
 export const joinWorkspace = mutation({
   args: {
-    id: v.id("workspace"),
+    workspaceId: v.id("workspace"),
     joinCode: v.string(),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx)
     if (!userId) throw new ConvexError("Not authenticated")
 
-    const workspace = await ctx.db.get(args.id)
+    const workspace = await ctx.db.get(args.workspaceId)
     if (!workspace) throw new ConvexError("Workspace not found")
 
     if (workspace.joinCode !== args.joinCode)
@@ -160,14 +211,14 @@ export const joinWorkspace = mutation({
     const isAlreadyMember = await ctx.db
       .query("workspaceMember")
       .withIndex("by_workspace_id_user_id", (q) =>
-        q.eq("workspaceId", args.id).eq("userId", userId)
+        q.eq("workspaceId", args.workspaceId).eq("userId", userId)
       )
       .unique()
 
     if (isAlreadyMember) throw new ConvexError("Already a member")
 
     const workspaceId = await ctx.db.insert("workspaceMember", {
-      workspaceId: args.id,
+      workspaceId: args.workspaceId,
       userId,
       role: "member",
     })
