@@ -15,22 +15,23 @@ export default function WorkbenchPage() {
   const router = useRouter()
   const workspaceId = useWorkspaceId()
 
-  const { data, isPending } = useQuery({
-    ...convexQuery(api.channels.getChannels, { workspaceId }),
-    initialData: [],
-  })
+  const { data: channels, isPending: isChannelsLoading } = useQuery(
+    convexQuery(api.channels.getChannels, { workspaceId })
+  )
 
   useEffect(() => {
-    const channelId = data?.[0]?._id
+    if (isChannelsLoading) return
+
+    const channelId = channels?.[0]?._id
     if (channelId) {
       router.replace(`/workbench/${workspaceId}/channel/${channelId}`)
     }
-  }, [data, workspaceId, router])
+  }, [channels, workspaceId, router, isChannelsLoading])
 
-  if (isPending)
+  if (isChannelsLoading)
     return (
       <div className="flex h-screen items-center justify-center">
-        <Loader2 className="size-6 animate-spin" />
+        <Loader2 className="size-5 animate-spin" />
       </div>
     )
 

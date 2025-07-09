@@ -27,7 +27,7 @@ export default function JoinWorkspacePage() {
   const workspaceId = useWorkspaceId()
 
   const { data: workspace, isPending: isWorkspaceLoading } = useQuery(
-    convexQuery(api.workspaces.getWorkspaceInfo, { id: workspaceId })
+    convexQuery(api.workspaces.getWorkspaceInfo, { workspaceId })
   )
 
   const { mutateAsync: joinWorkspace, isPending: isJoining } = useMutation({
@@ -87,7 +87,7 @@ export default function JoinWorkspacePage() {
           maxLength={6}
           pattern={REGEXP_ONLY_DIGITS_AND_CHARS}
           onComplete={(code: string) =>
-            joinWorkspace({ id: workspaceId, joinCode: code })
+            joinWorkspace({ workspaceId, joinCode: code })
           }
           disabled={isJoining}
           aria-label="Workspace join code"
