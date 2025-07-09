@@ -1,8 +1,6 @@
 "use client"
 
-import { useConvexMutation } from "@convex-dev/react-query"
-import { useMutation } from "@tanstack/react-query"
-import { toast } from "sonner"
+import { useRouter } from "next/navigation"
 
 import {
   AlertDialog,
@@ -15,51 +13,55 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 
-import { useChannelId } from "@/hooks/useChannelId"
-import { useWorkspaceId } from "@/hooks/useWorkspaceId"
+import { useDeleteChannel } from "@/features/channels/api/useDeleteChannel"
 
-import { api } from "../../../../convex/_generated/api"
-import { useDeleteChannelModalStore } from "../store/useDeleteChannelModal"
+import { Doc } from "../../../../convex/_generated/dataModel"
 
-export function DeleteChannelModal() {
-  const workspaceId = useWorkspaceId()
-  const channelId = useChannelId()
-  const { deleteChannelIsOpen, setDeleteChannelIsOpen } =
-    useDeleteChannelModalStore()
+export function DeleteChannelModal({
+  open,
+  onOpenChange,
+  channel,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  channel: Doc<"channel">
+}) {
+  const router = useRouter()
 
-  const { mutateAsync, isPending } = useMutation({
-    mutationFn: useConvexMutation(api.channels.deleteChannel),
-  })
+  const { mutate: deleteChannel, isPending: isDeleteChannelPending } =
+    useDeleteChannel()
 
-  async function handleDelete() {
-    try {
-      const result = await mutateAsync({ workspaceId, channelId })
-      if (result && typeof result === "object" && "error" in result) {
-        toast.error(result.error)
-        return
+  function handleDelete() {
+    deleteChannel(
+      { workspaceId: channel.workspaceId, channelId: channel._id },
+      {
+        onSuccess: () => {
+          onOpenChange(false)
+          router.replace(`/workbench/${channel.workspaceId}`)
+        },
       }
-      toast.success(`${channelId} channel has been deleted`)
-      setDeleteChannelIsOpen(false)
-    } catch {
-      toast.error("Failed to delete channel")
-    }
+    )
   }
+
   return (
-    <AlertDialog
-      open={deleteChannelIsOpen}
-      onOpenChange={setDeleteChannelIsOpen}
-    >
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+          <AlertDialogTitle>
+            Delete channel <span className="text-primary">{channel.name}</span>
+          </AlertDialogTitle>
           <AlertDialogDescription>
-            This action cannot be undone. This will permanently delete your
-            channel and remove your data from our servers.
+            This action cannot be undone. All data in{" "}
+            <span className="text-primary">{channel.name}</span> will be
+            permanently deleted.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction disabled={isPending} onClick={handleDelete}>
+          <AlertDialogAction
+            disabled={isDeleteChannelPending}
+            onClick={handleDelete}
+          >
             Continue
           </AlertDialogAction>
         </AlertDialogFooter>
