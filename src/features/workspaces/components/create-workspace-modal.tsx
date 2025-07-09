@@ -1,17 +1,12 @@
-import { useConvexMutation } from "@convex-dev/react-query"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useMutation } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 
+import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
-import { toast } from "sonner"
-import { z } from "zod"
 
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -26,60 +21,58 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 
-import { api } from "../../../../convex/_generated/api"
-import { useCreateWorkspaceModalStore } from "../store/useCreateWorkspaceModal"
-import { createWorkspaceFormSchema } from "../validation/workspaceSchemas"
+import { useCreateWorkspace } from "@/features/workspaces/api/useCreateWorkspace"
+import { useWorkspaceModalStore } from "@/features/workspaces/store/useWorkspaceModalStore"
+import {
+  CreateWorkspaceForm,
+  createWorkspaceFormSchema,
+} from "@/features/workspaces/validation/workspaceSchemas"
 
 export function CreateWorkspaceModal({
   isModalClosable = true,
 }: {
-  isModalClosable: boolean
+  isModalClosable?: boolean
 }) {
   const router = useRouter()
-  const { createWorkspaceIsOpen, setCreateWorkspaceIsOpen } =
-    useCreateWorkspaceModalStore()
+  const { isOpen, setIsOpen } = useWorkspaceModalStore()
 
-  const { mutateAsync, isPending } = useMutation({
-    mutationFn: useConvexMutation(api.workspaces.createWorkspace),
-  })
-
-  const form = useForm<z.infer<typeof createWorkspaceFormSchema>>({
+  const form = useForm<CreateWorkspaceForm>({
     resolver: zodResolver(createWorkspaceFormSchema),
     defaultValues: {
       name: "",
     },
   })
 
-  function onSubmit(values: z.infer<typeof createWorkspaceFormSchema>) {
-    const promise = mutateAsync(values)
-    toast.promise(promise, {
-      loading: "Loading...",
-      success: (workbenchId) => {
-        setCreateWorkspaceIsOpen(false)
-        router.push(`/workbench/${workbenchId}`)
-        return `${values.name} workspace has been added`
-      },
-      error: () => {
-        return "Failed to create workspace"
+  function handleClose() {
+    form.reset()
+    setIsOpen(false)
+  }
+
+  const { mutate: createWorkspace, isPending: isCreateWorkspacePending } =
+    useCreateWorkspace()
+
+  function handleSubmit(values: CreateWorkspaceForm) {
+    createWorkspace(values, {
+      onSuccess: (id) => {
+        router.push(`/workbench/${id}`)
+        handleClose()
       },
     })
   }
 
   return (
-    <Dialog
-      open={createWorkspaceIsOpen}
-      onOpenChange={setCreateWorkspaceIsOpen}
-    >
-      <DialogContent showCloseButton={isModalClosable}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent
+        showCloseButton={isModalClosable && !isCreateWorkspacePending}
+      >
         <DialogHeader>
           <DialogTitle>Create a New Workspace</DialogTitle>
-          <DialogDescription>
-            Workspaces help you organize your team, projects, and tools in one
-            place.
-          </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+          <form
+            onSubmit={form.handleSubmit(handleSubmit)}
+            className="space-y-5"
+          >
             <FormField
               control={form.control}
               name="name"
@@ -97,8 +90,8 @@ export function CreateWorkspaceModal({
               )}
             />
             <DialogFooter>
-              <Button type="submit" disabled={isPending}>
-                Create Workspace
+              <Button type="submit" disabled={isCreateWorkspacePending}>
+                {isCreateWorkspacePending ? "Creating..." : "Create Workspace"}
               </Button>
             </DialogFooter>
           </form>
