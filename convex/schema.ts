@@ -23,6 +23,14 @@ const schema = defineSchema({
     name: v.string(),
     description: v.optional(v.string()),
   }).index("by_workspace_id", ["workspaceId"]),
+  message: defineTable({
+    text: v.optional(v.string()),
+    files: v.optional(v.array(v.id("_storage"))),
+    memberId: v.id("workspaceMember"),
+    workspaceId: v.id("workspace"),
+    channelId: v.optional(v.id("channel")),
+    updatedAt: v.optional(v.number()),
+  }).index("by_channel_id", ["channelId"]),
 })
 
 export default schema
