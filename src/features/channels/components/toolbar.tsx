@@ -1,0 +1,64 @@
+import { useConvexMutation } from "@convex-dev/react-query"
+import { useMutation } from "@tanstack/react-query"
+import { MessageSquareTextIcon, Pencil, Smile, Trash } from "lucide-react"
+
+import { EmojiSelector } from "@/components/emoji-selector"
+import { Hint } from "@/components/hint"
+import { Button } from "@/components/ui/button"
+
+import { api } from "../../../../convex/_generated/api"
+import { Id } from "../../../../convex/_generated/dataModel"
+
+export const Toolbar = ({
+  isAuthor,
+  messageId,
+}: {
+  isAuthor: boolean
+  messageId: Id<"message">
+}) => {
+  const { mutateAsync: toogleReaction } = useMutation({
+    mutationFn: useConvexMutation(api.messages.toogleReaction),
+  })
+
+  const handleEmojiSelect = (emoji: string) => {
+    toogleReaction({
+      emoji,
+      messageId,
+    })
+  }
+
+  return (
+    <div className="absolute top-2 right-5">
+      <div className="bg-card flex rounded-md border opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
+        <EmojiSelector
+          align="end"
+          hint="Insert Emoji"
+          onEmojiSelect={handleEmojiSelect}
+        >
+          <Button variant="ghost" size="icon">
+            <Smile className="h-4 w-4" />
+          </Button>
+        </EmojiSelector>
+        <Hint label="Reply in thread">
+          <Button size="icon" variant="ghost" onClick={() => {}}>
+            <MessageSquareTextIcon className="size-4" />
+          </Button>
+        </Hint>
+        {isAuthor && (
+          <Hint label="Edit message">
+            <Button size="icon" variant="ghost" onClick={() => {}}>
+              <Pencil className="size-4" />
+            </Button>
+          </Hint>
+        )}
+        {isAuthor && (
+          <Hint label="Delete message">
+            <Button size="icon" variant="ghost" onClick={() => {}}>
+              <Trash className="size-4" />
+            </Button>
+          </Hint>
+        )}
+      </div>
+    </div>
+  )
+}
