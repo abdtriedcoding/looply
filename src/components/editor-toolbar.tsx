@@ -17,6 +17,7 @@ import {
   Smile,
   Underline,
   Undo,
+  X,
 } from "lucide-react"
 
 import { EditorLinkOptionsModal } from "@/components/editor-link-options-modal"
@@ -31,11 +32,17 @@ export function EditorToolbar({
   handleSend,
   fileRef,
   uploadedFilesCount = 0,
+  variant = "create",
+  onCancel,
+  onUpdate,
 }: {
   editor: Editor
   handleSend: () => void
   fileRef: React.RefObject<HTMLInputElement | null>
   uploadedFilesCount?: number
+  variant?: "create" | "edit"
+  onCancel?: () => void
+  onUpdate?: () => void
 }) {
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false)
 
@@ -122,29 +129,30 @@ export function EditorToolbar({
           </Button>
         </Hint>
 
-        <Hint
-          label={
-            uploadedFilesCount >= 5
-              ? "Maximum 5 files reached"
-              : "Upload Files (Images, PDFs, Documents)"
-          }
-        >
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleFileClick}
-            disabled={uploadedFilesCount >= 5}
-            className={cn(
-              "h-8 w-8 p-0",
+        {variant === "create" && (
+          <Hint
+            label={
               uploadedFilesCount >= 5
-                ? "cursor-not-allowed opacity-50"
-                : "text-muted-foreground hover:text-foreground"
-            )}
+                ? "Maximum 5 files reached"
+                : "Upload Files (Images, PDFs, Documents)"
+            }
           >
-            <Paperclip className="h-4 w-4" />
-          </Button>
-        </Hint>
-
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleFileClick}
+              disabled={uploadedFilesCount >= 5}
+              className={cn(
+                "h-8 w-8 p-0",
+                uploadedFilesCount >= 5
+                  ? "cursor-not-allowed opacity-50"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <Paperclip className="h-4 w-4" />
+            </Button>
+          </Hint>
+        )}
         <EmojiSelector
           hint="Insert Emoji"
           onEmojiSelect={(emoji) =>
@@ -315,17 +323,40 @@ export function EditorToolbar({
 
       <div className="bg-border mx-1 h-6 w-px" />
 
-      <Hint label="Send message (Ctrl+Enter)">
-        <Button
-          size="sm"
-          onClick={handleSend}
-          disabled={!editor.getText().trim() && uploadedFilesCount === 0}
-          className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-md px-4 py-2 disabled:opacity-50"
-        >
-          <Send className="mr-2 h-4 w-4" />
-          Send
-        </Button>
-      </Hint>
+      {variant === "create" && (
+        <Hint label="Send message (Ctrl+Enter)">
+          <Button
+            size="sm"
+            onClick={handleSend}
+            disabled={!editor.getText().trim() && uploadedFilesCount === 0}
+            className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-md px-4 py-2 disabled:opacity-50"
+          >
+            <Send className="mr-2 h-4 w-4" />
+            Send
+          </Button>
+        </Hint>
+      )}
+
+      {variant === "edit" && (
+        <div className="ml-auto flex items-center gap-x-2">
+          <Hint label="Update message (Ctrl+Enter)">
+            <Button
+              size="sm"
+              onClick={onUpdate}
+              disabled={!editor.getText().trim()}
+            >
+              <Send className="h-4 w-4" />
+              Save
+            </Button>
+          </Hint>
+          <Hint label="Cancel (Esc)">
+            <Button variant="secondary" size="sm" onClick={onCancel}>
+              <X className="h-4 w-4" />
+              Cancel
+            </Button>
+          </Hint>
+        </div>
+      )}
 
       <EditorLinkOptionsModal
         editor={editor}

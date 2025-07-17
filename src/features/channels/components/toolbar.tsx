@@ -12,9 +12,13 @@ import { Id } from "../../../../convex/_generated/dataModel"
 export const Toolbar = ({
   isAuthor,
   messageId,
+  handleEdit,
+  handleDelete,
 }: {
   isAuthor: boolean
   messageId: Id<"message">
+  handleEdit: () => void
+  handleDelete: () => void
 }) => {
   const { mutateAsync: toogleReaction } = useMutation({
     mutationFn: useConvexMutation(api.messages.toogleReaction),
@@ -46,14 +50,14 @@ export const Toolbar = ({
         </Hint>
         {isAuthor && (
           <Hint label="Edit message">
-            <Button size="icon" variant="ghost" onClick={() => {}}>
+            <Button size="icon" variant="ghost" onClick={handleEdit}>
               <Pencil className="size-4" />
             </Button>
           </Hint>
         )}
         {isAuthor && (
           <Hint label="Delete message">
-            <Button size="icon" variant="ghost" onClick={() => {}}>
+            <Button size="icon" variant="ghost" onClick={handleDelete}>
               <Trash className="size-4" />
             </Button>
           </Hint>

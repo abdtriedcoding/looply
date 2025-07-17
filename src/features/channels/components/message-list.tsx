@@ -29,6 +29,7 @@ export const MessageList = ({ messages }: { messages: any }) => {
             image={message.images}
             reactions={message.reactions}
             isAuthor={message.memberId === currentMember?._id}
+            updatedAt={message.updatedAt}
           />
         ))}
     </div>

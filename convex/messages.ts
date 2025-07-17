@@ -173,3 +173,57 @@ export const toogleReaction = mutation({
     return existingMessageReactionFromUser
   },
 })
+
+export const deleteMessage = mutation({
+  args: {
+    messageId: v.id("message"),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx)
+    if (!userId) throw new ConvexError("Not authenticated")
+
+    const message = await ctx.db.get(args.messageId)
+    if (!message) throw new ConvexError("Message not found")
+
+    const member = await ctx.db
+      .query("workspaceMember")
+      .withIndex("by_workspace_id_user_id", (q) =>
+        q.eq("workspaceId", message.workspaceId).eq("userId", userId)
+      )
+      .unique()
+    if (!member || member._id !== message.memberId)
+      throw new ConvexError("Unauthorized")
+
+    await ctx.db.delete(args.messageId)
+    return args.messageId
+  },
+})
+
+export const updateMessage = mutation({
+  args: {
+    messageId: v.id("message"),
+    text: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx)
+    if (!userId) throw new ConvexError("Not authenticated")
+
+    const message = await ctx.db.get(args.messageId)
+    if (!message) throw new ConvexError("Message not found")
+
+    const member = await ctx.db
+      .query("workspaceMember")
+      .withIndex("by_workspace_id_user_id", (q) =>
+        q.eq("workspaceId", message.workspaceId).eq("userId", userId)
+      )
+      .unique()
+    if (!member || member._id !== message.memberId)
+      throw new ConvexError("Unauthorized")
+
+    await ctx.db.patch(args.messageId, {
+      text: args.text,
+      updatedAt: Date.now(),
+    })
+    return args.messageId
+  },
+})
