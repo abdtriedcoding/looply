@@ -29,8 +29,12 @@ const schema = defineSchema({
     memberId: v.id("workspaceMember"),
     workspaceId: v.id("workspace"),
     channelId: v.optional(v.id("channel")),
+    conversationId: v.optional(v.id("conversation")),
     updatedAt: v.optional(v.number()),
-  }).index("by_channel_id", ["channelId"]),
+  })
+    .index("by_channel_id", ["channelId"])
+    .index("by_conversation_id", ["conversationId"])
+    .index("by_channel_id_conversation_id", ["channelId", "conversationId"]),
   reaction: defineTable({
     emoji: v.string(),
     messageId: v.id("message"),
