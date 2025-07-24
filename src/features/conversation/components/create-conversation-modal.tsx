@@ -49,7 +49,9 @@ export function CreateConversationModal({
     },
     onSuccess: (conversationId: Id<"conversation">) => {
       toast.success(`Conversation created`)
-      router.push(`/workbench/${workspaceId}/conversation/${conversationId}`)
+      router.push(
+        `/workbench/${workspaceId}/conversation/${conversationId}/member/${selectedMemberId}`
+      )
       setSelectedMemberId("")
       onOpenChange(false)
     },

@@ -30,6 +30,7 @@ export const Message = ({
   image,
   reactions,
   isAuthor,
+  isCompact,
   updatedAt,
 }: {
   messageId: Id<"message">
@@ -45,6 +46,7 @@ export const Message = ({
     }
   >
   isAuthor: boolean
+  isCompact: boolean
   updatedAt: Doc<"message">["updatedAt"]
 }) => {
   const [isEditing, setIsEditing] = useState(false)
@@ -80,6 +82,68 @@ export const Message = ({
       text: content,
     })
   }
+
+  if (isCompact)
+    return (
+      <>
+        <div className="group hover:bg-muted relative flex flex-col p-1.5 px-5">
+          <div className="flex items-start gap-2">
+            <Hint label={formatFullTime(dayjs(createdAt))}>
+              <button className="text-muted-foreground text-center text-xs opacity-0 group-hover:opacity-100 hover:underline">
+                {dayjs(createdAt).format("hh:mm")}
+              </button>
+            </Hint>
+            {isEditing ? (
+              <Editor
+                initialContent={body}
+                onCancel={handleCancel}
+                onUpdate={handleSave}
+                variant="edit"
+              />
+            ) : (
+              <div className="flex flex-col">
+                <div className="flex items-center gap-2 text-sm">
+                  <h2 className="text-primary font-bold hover:underline">
+                    {authorName}
+                  </h2>
+                </div>
+
+                {body && (
+                  <div className="flex items-center gap-2">
+                    <Renderer value={body} />
+                    {updatedAt && (
+                      <span className="text-foreground pt-1 text-xs opacity-70">
+                        (edited)
+                      </span>
+                    )}
+                  </div>
+                )}
+                {image.length > 0 && <Thumbnail url={image} />}
+                {reactions.length > 0 && (
+                  <Reactions reactions={reactions} messageId={messageId} />
+                )}
+              </div>
+            )}
+
+            {!isEditing && (
+              <Toolbar
+                isAuthor={isAuthor}
+                messageId={messageId}
+                handleEdit={handleEdit}
+                handleDelete={handleDelete}
+              />
+            )}
+          </div>
+        </div>
+        {isDeleting && (
+          <DeleteMessageModal
+            open={isDeleting}
+            onOpenChange={setIsDeleting}
+            messageId={messageId}
+          />
+        )}
+      </>
+    )
 
   return (
     <>
