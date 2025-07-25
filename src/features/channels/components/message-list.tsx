@@ -77,6 +77,7 @@ export const MessageList = ({
                 <Message
                   key={message._id}
                   messageId={message._id}
+                  authorId={message.memberId}
                   authorName={message.user.name}
                   authorImage={message.user.image}
                   createdAt={message._creationTime}
