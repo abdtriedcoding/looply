@@ -131,7 +131,7 @@ export function Editor({
   }
 
   return (
-    <div className="mx-auto w-full max-w-4xl">
+    <div className="w-full">
       <input
         type="file"
         className="hidden"

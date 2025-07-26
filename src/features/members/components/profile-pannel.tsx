@@ -22,8 +22,6 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Separator } from "@/components/ui/separator"
 
-import { usePannelStore } from "@/features/members/store/usePannel"
-
 import { useWorkspaceId } from "@/hooks/useWorkspaceId"
 
 import { ROLE } from "@/constants"
@@ -31,13 +29,14 @@ import { handleConvexMutationError } from "@/lib/convex-mutation-error"
 
 import { api } from "../../../../convex/_generated/api"
 import { Id } from "../../../../convex/_generated/dataModel"
+import { useProfilePannelStore } from "../store/useProfilePannel"
 
 export const ProfilePannel = ({
   memberId,
 }: {
   memberId: Id<"workspaceMember">
 }) => {
-  const { closeProfile } = usePannelStore()
+  const { closeProfile } = useProfilePannelStore()
 
   const workspaceId = useWorkspaceId()
 

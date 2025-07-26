@@ -12,7 +12,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 import { Thumbnail } from "@/features/channels/components/thumbnail"
 import { Toolbar } from "@/features/channels/components/toolbar"
-import { usePannelStore } from "@/features/members/store/usePannel"
+import { useProfilePannelStore } from "@/features/members/store/useProfilePannel"
+import { useThreadStore } from "@/features/messages/store/useThread"
 
 import { handleConvexMutationError } from "@/lib/convex-mutation-error"
 import { formatFullTime } from "@/lib/date-formatter"
@@ -34,6 +35,7 @@ export const Message = ({
   isAuthor,
   isCompact,
   updatedAt,
+  isThread,
 }: {
   messageId: Id<"message">
   authorId: Id<"workspaceMember">
@@ -51,10 +53,12 @@ export const Message = ({
   isAuthor: boolean
   isCompact: boolean
   updatedAt: Doc<"message">["updatedAt"]
+  isThread?: boolean
 }) => {
   const [isEditing, setIsEditing] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
-  const { openProfile } = usePannelStore()
+  const { openProfile } = useProfilePannelStore()
+  const { openThread } = useThreadStore()
 
   const handleEdit = () => {
     setIsEditing(true)
@@ -85,6 +89,10 @@ export const Message = ({
       messageId,
       text: content,
     })
+  }
+
+  const handleThreadOpen = () => {
+    openThread(messageId)
   }
 
   if (isCompact)
@@ -135,6 +143,8 @@ export const Message = ({
                 messageId={messageId}
                 handleEdit={handleEdit}
                 handleDelete={handleDelete}
+                handleThreadOpen={handleThreadOpen}
+                isThread={isThread}
               />
             )}
           </div>
@@ -208,6 +218,8 @@ export const Message = ({
               messageId={messageId}
               handleEdit={handleEdit}
               handleDelete={handleDelete}
+              handleThreadOpen={handleThreadOpen}
+              isThread={isThread}
             />
           )}
         </div>

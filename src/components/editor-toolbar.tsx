@@ -79,7 +79,7 @@ export function EditorToolbar({
   }, [editor])
 
   return (
-    <div className="border-border bg-muted/30 flex items-center gap-1 border-b p-2">
+    <div className="border-border bg-muted/30 flex flex-wrap items-center gap-1 border-b p-2">
       <div className="flex items-center gap-1">
         <Hint label="Bold (Ctrl+B)">
           <Button

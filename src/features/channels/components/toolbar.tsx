@@ -14,11 +14,15 @@ export const Toolbar = ({
   messageId,
   handleEdit,
   handleDelete,
+  handleThreadOpen,
+  isThread = true,
 }: {
   isAuthor: boolean
   messageId: Id<"message">
   handleEdit: () => void
   handleDelete: () => void
+  handleThreadOpen: () => void
+  isThread?: boolean
 }) => {
   const { mutateAsync: toogleReaction } = useMutation({
     mutationFn: useConvexMutation(api.messages.toogleReaction),
@@ -43,11 +47,13 @@ export const Toolbar = ({
             <Smile className="h-4 w-4" />
           </Button>
         </EmojiSelector>
-        <Hint label="Reply in thread">
-          <Button size="icon" variant="ghost" onClick={() => {}}>
-            <MessageSquareTextIcon className="size-4" />
-          </Button>
-        </Hint>
+        {isThread && (
+          <Hint label="Reply in thread">
+            <Button size="icon" variant="ghost" onClick={handleThreadOpen}>
+              <MessageSquareTextIcon className="size-4" />
+            </Button>
+          </Hint>
+        )}
         {isAuthor && (
           <Hint label="Edit message">
             <Button size="icon" variant="ghost" onClick={handleEdit}>
