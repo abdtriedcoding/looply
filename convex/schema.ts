@@ -30,12 +30,18 @@ const schema = defineSchema({
     workspaceId: v.id("workspace"),
     channelId: v.optional(v.id("channel")),
     conversationId: v.optional(v.id("conversation")),
+    parentMessageId: v.optional(v.id("message")),
     updatedAt: v.optional(v.number()),
   })
     .index("by_channel_id", ["channelId"])
     .index("by_conversation_id", ["conversationId"])
     .index("by_member_id", ["memberId"])
-    .index("by_channel_id_conversation_id", ["channelId", "conversationId"]),
+    .index("by_parent_message_id", ["parentMessageId"])
+    .index("by_channel_id_conversation_id_parent_message_id", [
+      "channelId",
+      "conversationId",
+      "parentMessageId",
+    ]),
   reaction: defineTable({
     emoji: v.string(),
     messageId: v.id("message"),
