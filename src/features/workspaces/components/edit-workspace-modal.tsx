@@ -1,4 +1,6 @@
+import { useConvexMutation } from "@convex-dev/react-query"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { useMutation } from "@tanstack/react-query"
 import { useForm } from "react-hook-form"
 
 import { Button } from "@/components/ui/button"
@@ -19,48 +21,53 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 
-import { useEditWorkspace } from "@/features/workspaces/api/useEditWorkspace"
 import {
   EditWorkspaceForm,
   editWorkspaceFormSchema,
 } from "@/features/workspaces/validation/workspaceSchemas"
 
+import { api } from "../../../../convex/_generated/api"
 import { Doc } from "../../../../convex/_generated/dataModel"
+
+interface EditWorkspaceModalProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  workspace: Doc<"workspace">
+}
 
 export function EditWorkspaceModal({
   open,
   onOpenChange,
   workspace,
-}: {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  workspace: Doc<"workspace">
-}) {
-  const form = useForm<EditWorkspaceForm>({
+}: EditWorkspaceModalProps) {
+  const workspaceEditForm = useForm<EditWorkspaceForm>({
     resolver: zodResolver(editWorkspaceFormSchema),
     defaultValues: {
       name: workspace.name,
-      imageUrl: workspace.imageUrl,
     },
   })
 
-  function handleClose() {
-    form.reset()
-    onOpenChange(false)
+  const { mutate: updateWorkspace, isPending: isUpdatingWorkspace } =
+    useMutation({
+      mutationFn: useConvexMutation(api.workspaces.updateWorkspace),
+    })
+
+  const handleModalClose = () => {
+    if (!isUpdatingWorkspace) {
+      workspaceEditForm.reset()
+      onOpenChange(false)
+    }
   }
 
-  const { mutate: updateWorkspace, isPending: isUpdateWorkspacePending } =
-    useEditWorkspace()
-
-  function handleSubmit(values: EditWorkspaceForm) {
+  const handleWorkspaceUpdate = (values: EditWorkspaceForm) => {
     updateWorkspace(
       { ...values, workspaceId: workspace._id },
-      { onSuccess: () => handleClose() }
+      { onSuccess: () => handleModalClose() }
     )
   }
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
+    <Dialog open={open} onOpenChange={handleModalClose}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
@@ -68,13 +75,13 @@ export function EditWorkspaceModal({
             <span className="text-primary">{workspace.name}</span>
           </DialogTitle>
         </DialogHeader>
-        <Form {...form}>
+        <Form {...workspaceEditForm}>
           <form
-            onSubmit={form.handleSubmit(handleSubmit)}
+            onSubmit={workspaceEditForm.handleSubmit(handleWorkspaceUpdate)}
             className="space-y-5"
           >
             <FormField
-              control={form.control}
+              control={workspaceEditForm.control}
               name="name"
               render={({ field }) => (
                 <FormItem>
@@ -89,22 +96,9 @@ export function EditWorkspaceModal({
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="imageUrl"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Workspace Image</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
             <DialogFooter>
-              <Button type="submit" disabled={isUpdateWorkspacePending}>
-                {isUpdateWorkspacePending ? "Updating..." : "Save Changes"}
+              <Button type="submit" disabled={isUpdatingWorkspace}>
+                {isUpdatingWorkspace ? "Updating..." : "Save Changes"}
               </Button>
             </DialogFooter>
           </form>

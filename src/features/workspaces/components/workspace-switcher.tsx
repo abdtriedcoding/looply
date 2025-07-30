@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
-import { useWorkspaceModalStore } from "@/features/workspaces/store/useWorkspaceModalStore"
+import { useCreateWorkspaceModal } from "@/features/workspaces/store/useCreateWorkspaceModal"
 
 import { Doc } from "../../../../convex/_generated/dataModel"
 
@@ -26,13 +26,21 @@ export function WorkspaceSwitcher({
   workspace,
   isAdmin,
 }: WorkspaceSwitcherProps) {
-  const { setIsOpen } = useWorkspaceModalStore()
-  const fallbackName = workspace.name.charAt(0).toUpperCase()
+  const { openWorkspaceModal } = useCreateWorkspaceModal()
+
+  const workspaceName = workspace.name
+  const workspaceImageUrl = workspace?.imageUrl
+  const workspaceAvatarFallback = workspaceName.charAt(0).toUpperCase() || "W"
+
+  const handleCreateWorkspace = () => {
+    openWorkspaceModal()
+  }
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button size="icon" variant="secondary">
-          {fallbackName}
+        <Button size="icon" variant="destructive">
+          {workspaceAvatarFallback}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
@@ -46,24 +54,24 @@ export function WorkspaceSwitcher({
         </DropdownMenuLabel>
         <DropdownMenuLabel>
           <div className="flex items-center gap-2">
-            <Avatar className="h-8 w-8 rounded-lg">
+            <Avatar className="h-8 w-8 rounded-md">
               <AvatarImage
-                src={workspace.imageUrl}
-                alt={workspace.name || "Workspace avatar"}
+                src={workspaceImageUrl}
+                alt={workspaceName || "Workspace avatar"}
               />
-              <AvatarFallback className="rounded-lg">
-                {fallbackName}
+              <AvatarFallback className="bg-destructive dark:bg-destructive/60 size-7 rounded-md text-white">
+                {workspaceAvatarFallback}
               </AvatarFallback>
             </Avatar>
             <div className="grid flex-1 text-left text-sm leading-tight">
-              <span className="truncate font-medium">{workspace.name}</span>
+              <span className="truncate font-medium">{workspaceName}</span>
             </div>
           </div>
         </DropdownMenuLabel>
         {isAdmin && (
           <>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => setIsOpen(true)}>
+            <DropdownMenuItem onClick={handleCreateWorkspace}>
               <div className="flex items-center gap-2">
                 <Button variant="secondary" size="iconSmall">
                   <Plus className="text-muted-foreground size-4" />

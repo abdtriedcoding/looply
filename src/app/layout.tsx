@@ -1,15 +1,15 @@
 import type { Metadata } from "next"
 import { Outfit } from "next/font/google"
 
-import { Toaster } from "@/components/ui/sonner"
-
 import { ThemeProvider } from "@/components/theme-provider"
+import { Toaster } from "@/components/ui/sonner"
 
 import "./globals.css"
 
 import { ConvexAuthNextjsServerProvider } from "@convex-dev/auth/nextjs/server"
 
 import { ConvexClientProvider } from "@/components/convex-client-provider"
+import { Modals } from "@/components/modals"
 import TanstackProvider from "@/components/tanstack-provider"
 
 const font = Outfit({
@@ -38,6 +38,7 @@ export default function RootLayout({
                 enableSystem
                 disableTransitionOnChange
               >
+                <Modals />
                 {children}
                 <Toaster richColors position="bottom-right" />
               </ThemeProvider>

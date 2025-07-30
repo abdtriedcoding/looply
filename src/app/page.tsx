@@ -5,36 +5,51 @@ import { useEffect } from "react"
 
 import { convexQuery } from "@convex-dev/react-query"
 import { useQuery } from "@tanstack/react-query"
-import { Loader2 } from "lucide-react"
 
-import { useWorkspaceModalStore } from "@/features/workspaces/store/useWorkspaceModalStore"
+import { FallbackScreen } from "@/components/fallback-screen"
+import { LoadingScreen } from "@/components/loading-screen"
+
+import { useCreateWorkspaceModal } from "@/features/workspaces/store/useCreateWorkspaceModal"
 
 import { api } from "../../convex/_generated/api"
 
 export default function HomePage() {
   const router = useRouter()
-  const { isOpen, setIsOpen } = useWorkspaceModalStore()
+  const { isWorkspaceModalOpen, openWorkspaceModal } = useCreateWorkspaceModal()
 
-  const { data: workspaces, isPending: isWorkspacesLoading } = useQuery(
-    convexQuery(api.workspaces.getWorkspaces, {})
-  )
+  const {
+    data: userWorkspaces,
+    isPending: isWorkspacesLoading,
+    error: workspacesLoadingError,
+  } = useQuery(convexQuery(api.workspaces.getWorkspaces, {}))
 
   useEffect(() => {
     if (isWorkspacesLoading) return
 
-    const workbenchId = workspaces?.[0]?._id
-    if (workbenchId) {
-      router.replace(`/workbench/${workbenchId}`)
-    } else if (!isOpen) {
-      setIsOpen(true)
+    const mostRecentWorkspaceId = userWorkspaces?.[0]?._id
+    if (mostRecentWorkspaceId) {
+      router.replace(`/workspace/${mostRecentWorkspaceId}`)
+    } else if (!isWorkspaceModalOpen) {
+      openWorkspaceModal()
     }
-  }, [isWorkspacesLoading, workspaces, setIsOpen, router, isOpen])
+  }, [
+    isWorkspacesLoading,
+    userWorkspaces,
+    openWorkspaceModal,
+    router,
+    isWorkspaceModalOpen,
+  ])
 
-  if (isWorkspacesLoading) {
+  if (isWorkspacesLoading) return <LoadingScreen />
+
+  if (workspacesLoadingError) {
     return (
-      <div className="flex h-screen items-center justify-center">
-        <Loader2 className="size-5 animate-spin" />
-      </div>
+      <FallbackScreen
+        title="Workspaces Error"
+        description="Something went wrong while loading your workspaces. Please try again later."
+        buttonLabel="Return Home"
+        buttonLink="/"
+      />
     )
   }
 

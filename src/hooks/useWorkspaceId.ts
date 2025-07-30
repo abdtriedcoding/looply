@@ -7,9 +7,9 @@ import { Id } from "../../convex/_generated/dataModel"
  */
 export const useWorkspaceId = (): Id<"workspace"> => {
   const params = useParams()
-  const id = params.workbenchId as Id<"workspace">
+  const id = params.workspaceId as Id<"workspace">
   if (!id) {
-    console.warn("[useWorkspaceId] workbenchId param is missing from route.")
+    console.warn("[useWorkspaceId] workspaceId param is missing from route.")
   }
   return id
 }
