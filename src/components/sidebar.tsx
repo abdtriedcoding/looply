@@ -16,7 +16,8 @@ import { WorkspaceSwitcher } from "@/features/workspaces/components/workspace-sw
 
 import { useWorkspaceId } from "@/hooks/useWorkspaceId"
 
-import { ROLE, SIDEBAR_ITEMS } from "@/constants"
+import { SIDEBAR_ITEMS } from "@/constants"
+import { isAdmin } from "@/lib/is-admin"
 
 import { api } from "../../convex/_generated/api"
 
@@ -61,12 +62,8 @@ export function Sidebar() {
   )
 
   const isLoading = isWorkspaceLoading || isUserLoading || isMemberLoading
-  const hasLoadingErrors = [
-    workspaceLoadingError,
-    userLoadingError,
-    memberLoadingError,
-  ].some(Boolean)
-  const isCurrentUserAdmin = currentMember?.role === ROLE.ADMIN
+  const hasLoadingErrors =
+    workspaceLoadingError || userLoadingError || memberLoadingError
 
   if (isLoading) return <SidebarSkeleton />
 
@@ -81,6 +78,8 @@ export function Sidebar() {
 
   if (!currentMember)
     return <SidebarErrorFallback errorMessage="Member access denied" />
+
+  const isCurrentUserAdmin = isAdmin(currentMember)
 
   return (
     <div className="flex h-full w-16 flex-col items-center gap-y-4 border-r p-4">

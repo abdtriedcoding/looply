@@ -9,7 +9,7 @@ import { useQuery } from "@tanstack/react-query"
 import { FallbackScreen } from "@/components/fallback-screen"
 import { LoadingScreen } from "@/components/loading-screen"
 
-import { useCreateWorkspaceModal } from "@/features/workspaces/store/useCreateWorkspaceModal"
+import { useCreateWorkspaceModal } from "@/features/workspaces/store/use-createworkspace-modal"
 
 import { api } from "../../convex/_generated/api"
 

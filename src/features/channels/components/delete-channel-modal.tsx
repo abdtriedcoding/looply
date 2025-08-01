@@ -2,6 +2,10 @@
 
 import { useRouter } from "next/navigation"
 
+import { useConvexMutation } from "@convex-dev/react-query"
+import { useMutation } from "@tanstack/react-query"
+import { toast } from "sonner"
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,8 +17,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 
-import { useDeleteChannel } from "@/features/channels/api/useDeleteChannel"
+import { handleConvexMutationError } from "@/lib/convex-mutation-error"
 
+import { api } from "../../../../convex/_generated/api"
 import { Doc } from "../../../../convex/_generated/dataModel"
 
 export function DeleteChannelModal({
@@ -29,18 +34,25 @@ export function DeleteChannelModal({
   const router = useRouter()
 
   const { mutate: deleteChannel, isPending: isDeleteChannelPending } =
-    useDeleteChannel()
+    useMutation({
+      mutationFn: useConvexMutation(api.channels.deleteChannel),
+    })
 
   function handleDelete() {
-    deleteChannel(
-      { workspaceId: channel.workspaceId, channelId: channel._id },
-      {
-        onSuccess: () => {
-          onOpenChange(false)
-          router.replace(`/workbench/${channel.workspaceId}`)
-        },
-      }
-    )
+    const payload = {
+      workspaceId: channel.workspaceId,
+      channelId: channel._id,
+    }
+
+    deleteChannel(payload, {
+      onSuccess: () => {
+        onOpenChange(false)
+        router.replace(`/workspace/${channel.workspaceId}`)
+      },
+      onError: (err: Error) => {
+        toast.error(handleConvexMutationError(err, "Failed to delete channel"))
+      },
+    })
   }
 
   return (
