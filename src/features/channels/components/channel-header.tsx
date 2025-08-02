@@ -13,28 +13,21 @@ import {
 
 import { DeleteChannelModal } from "@/features/channels/components/delete-channel-modal"
 import { EditChannelModal } from "@/features/channels/components/edit-channel-modal"
+import { ChannelHeaderProps, ChannelModalType } from "@/features/channels/types"
 
-import { Doc } from "../../../../convex/_generated/dataModel"
-
-export const ChannelHeader = ({ channel }: { channel: Doc<"channel"> }) => {
-  const [isEditChannelOpen, setEditChannelOpen] = useState(false)
-  const [isDeleteChannelOpen, setDeleteChannelOpen] = useState(false)
+export const ChannelHeader = ({ channel }: ChannelHeaderProps) => {
+  const [activeModal, setActiveModal] = useState<ChannelModalType | null>(null)
 
   return (
     <>
-      <div className="flex h-[49px] items-center justify-between border-b px-4">
+      <div className="flex h-[49px] items-center gap-4 border-b px-4">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <div className="flex items-center gap-2">
-              <Button variant="ghost">
-                <Hash className="text-muted-foreground size-4" />
-                {channel?.name}
-                <ChevronDown className="ml-auto h-4 w-4 shrink-0 opacity-70" />
-              </Button>
-              <p className="text-muted-foreground text-sm">
-                {channel?.description}
-              </p>
-            </div>
+            <Button variant="outline">
+              <Hash className="text-muted-foreground size-4" />
+              {channel.name}
+              <ChevronDown className="ml-auto h-4 w-4 shrink-0 opacity-70" />
+            </Button>
           </DropdownMenuTrigger>
 
           <DropdownMenuContent
@@ -43,10 +36,10 @@ export const ChannelHeader = ({ channel }: { channel: Doc<"channel"> }) => {
             align="start"
           >
             <>
-              <DropdownMenuItem onClick={() => setEditChannelOpen(true)}>
+              <DropdownMenuItem onClick={() => setActiveModal("editChannel")}>
                 Edit channel
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setDeleteChannelOpen(true)}>
+              <DropdownMenuItem onClick={() => setActiveModal("deleteChannel")}>
                 Delete channel
               </DropdownMenuItem>
               <DropdownMenuSeparator />
@@ -56,15 +49,22 @@ export const ChannelHeader = ({ channel }: { channel: Doc<"channel"> }) => {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        {channel.description && (
+          <p className="text-muted-foreground text-sm">{channel.description}</p>
+        )}
       </div>
       <EditChannelModal
-        open={isEditChannelOpen}
-        onOpenChange={setEditChannelOpen}
+        open={activeModal === "editChannel"}
+        onOpenChange={(open) =>
+          open ? setActiveModal("editChannel") : setActiveModal(null)
+        }
         channel={channel}
       />
       <DeleteChannelModal
-        open={isDeleteChannelOpen}
-        onOpenChange={setDeleteChannelOpen}
+        open={activeModal === "deleteChannel"}
+        onOpenChange={(open) =>
+          open ? setActiveModal("deleteChannel") : setActiveModal(null)
+        }
         channel={channel}
       />
     </>

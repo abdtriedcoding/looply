@@ -1,7 +1,7 @@
 import { getAuthUserId } from "@convex-dev/auth/server"
 import { ConvexError, v } from "convex/values"
 
-import { ADMIN } from "@/constants"
+import { ROLE } from "@/constants"
 
 import { mutation, query } from "./_generated/server"
 
@@ -128,7 +128,7 @@ export const updateMemberRole = mutation({
       )
       .unique()
 
-    if (!currentMember || currentMember.role !== ADMIN) {
+    if (!currentMember || currentMember.role !== ROLE.ADMIN) {
       throw new ConvexError("Unauthorized")
     }
 

@@ -24,6 +24,7 @@ interface EditorProps {
   variant?: "create" | "edit"
   onCancel?: () => void
   onUpdate?: (content: string | undefined) => void
+  disabled?: boolean
 }
 
 export function Editor({
@@ -34,6 +35,7 @@ export function Editor({
   variant = "create",
   onCancel,
   onUpdate,
+  disabled,
 }: EditorProps) {
   const [isFocused, setIsFocused] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -157,6 +159,7 @@ export function Editor({
           variant={variant}
           onCancel={onCancel}
           onUpdate={handleUpdate}
+          disabled={disabled}
         />
 
         <div className="overflow-y-auto" style={{ maxHeight }}>

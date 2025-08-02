@@ -1,3 +1,5 @@
+import { useCallback } from "react"
+
 import { convexQuery } from "@convex-dev/react-query"
 import { useQuery } from "@tanstack/react-query"
 import dayjs from "dayjs"
@@ -6,10 +8,16 @@ import { Loader } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 import { Message } from "@/features/channels/components/message"
+import { MessageHeaderProps, MessageListProps } from "@/features/messages/types"
 
+import { useInfiniteScrollTrigger } from "@/hooks/useInfiniteScrollTrigger"
+import { useMessagesGroupedByDate } from "@/hooks/useMessagesGroupedByDate"
 import { useWorkspaceId } from "@/hooks/useWorkspaceId"
 
-import { MESSAGE_COMPACT_TIME_WINDOW_MINUTES } from "@/constants"
+import {
+  LOAD_MORE_BATCH_SIZE,
+  MESSAGE_COMPACT_TIME_WINDOW_MINUTES,
+} from "@/constants"
 
 import { api } from "../../../../convex/_generated/api"
 import { Doc } from "../../../../convex/_generated/dataModel"
@@ -22,56 +30,39 @@ export const MessageList = ({
   isLoadingMore,
   canLoadMore,
   loadMore,
-}: {
-  messages: (typeof api.messages.getMessages._returnType)["page"]
-  channel?: Doc<"channel">
-  member?: Doc<"workspaceMember"> & { user: Doc<"users"> }
-  variant?: "channel" | "direct"
-  isLoadingMore: boolean
-  canLoadMore: boolean
-  loadMore: (numItems: number) => void
-}) => {
+}: MessageListProps) => {
   const workspaceId = useWorkspaceId()
 
   const { data: currentMember } = useQuery(
     convexQuery(api.members.currentMember, { workspaceId })
   )
 
-  const groupedMessages = messages.reduce(
-    (groups, message) => {
-      const dateKey = dayjs(message._creationTime).format("YYYY-MM-DD")
-      if (!groups[dateKey]) groups[dateKey] = []
-      groups[dateKey].push(message)
-      return groups
-    },
-    {} as Record<string, typeof messages>
-  )
+  const messageGroupsByDate = useMessagesGroupedByDate(messages)
 
-  const groupedArray = Object.entries(groupedMessages).map(([date, msgs]) => ({
-    date,
-    messages: msgs,
-  }))
+  const handleLoadMoreMessages = useCallback(() => {
+    loadMore(LOAD_MORE_BATCH_SIZE)
+  }, [loadMore])
+
+  const infiniteScrollRef = useInfiniteScrollTrigger(
+    canLoadMore,
+    isLoadingMore,
+    handleLoadMoreMessages
+  )
 
   return (
     <div className="messages-scrollbar relative flex flex-1 flex-col-reverse overflow-y-auto">
-      {groupedArray.map((group) => (
-        <div key={group.date}>
-          <div className="relative my-2 text-center">
-            <hr className="absolute top-1/2 right-0 left-0 border-t" />
-            <span className="bg-muted relative inline-block rounded-full border px-4 py-1 text-xs shadow-sm">
-              {dayjs(group.date).format("MMMM D, YYYY")}
-            </span>
-          </div>
+      {messageGroupsByDate.map((messageGroup) => (
+        <div key={messageGroup.date}>
+          <DateSeparator
+            date={dayjs(messageGroup.date).format("MMMM D, YYYY")}
+          />
           <div className="flex flex-col-reverse">
-            {group.messages.map((message, index) => {
-              const nextMessage = group.messages[index + 1]
-              const isMessageCompact =
-                nextMessage &&
-                nextMessage.user._id === message.user._id &&
-                dayjs(message._creationTime).diff(
-                  nextMessage._creationTime,
-                  "minute"
-                ) < MESSAGE_COMPACT_TIME_WINDOW_MINUTES
+            {messageGroup.messages.map((message, messageIndex) => {
+              const subsequentMessage = messageGroup.messages[messageIndex + 1]
+              const shouldCompactMessage = shouldMessageBeCompact(
+                message,
+                subsequentMessage
+              )
 
               return (
                 <Message
@@ -85,7 +76,7 @@ export const MessageList = ({
                   image={message.images}
                   reactions={message.reactions}
                   isAuthor={message.memberId === currentMember?._id}
-                  isCompact={!!isMessageCompact}
+                  isCompact={shouldCompactMessage}
                   updatedAt={message.updatedAt}
                 />
               )
@@ -94,65 +85,101 @@ export const MessageList = ({
         </div>
       ))}
 
-      <div
-        className="h-1"
-        ref={(el) => {
-          if (el) {
-            const observer = new IntersectionObserver(
-              ([entry]) => {
-                if (entry.isIntersecting && canLoadMore) {
-                  loadMore(20)
-                }
-              },
-              {
-                threshold: 1.0,
-              }
-            )
-            observer.observe(el)
-            return () => observer.disconnect()
-          }
-        }}
-      ></div>
+      <div className="h-1" ref={infiniteScrollRef} />
 
-      {isLoadingMore && (
-        <div className="relative my-2 text-center">
-          <hr className="absolute top-1/2 right-0 left-0 border-t" />
-          <span className="bg-muted relative inline-block rounded-full border px-4 py-1 text-xs shadow-sm">
-            <Loader className="size-4 animate-spin" />
-          </span>
-        </div>
-      )}
+      {isLoadingMore && <LoadingMoreIndicator />}
 
-      {variant === "channel" && channel && (
-        <div className="mx-5 mb-4 pt-20">
-          <p className="mb-2 flex items-center text-2xl font-bold">
-            # {channel.name}
-          </p>
-          <p className="text-muted-foreground pb-4 font-normal">
-            This channel was created on{" "}
-            {dayjs(channel._creationTime).format("MMMM D, YYYY")}. This is the
-            very beginning of the <strong>{channel.name}</strong> channel.
-          </p>
-        </div>
-      )}
-
-      {variant === "direct" && member && (
-        <div className="mx-5 mb-4 pt-20">
-          <div className="mb-2 flex items-center gap-x-1">
-            <Avatar className="mr-2 size-14">
-              <AvatarImage src={member.user.image} />
-              <AvatarFallback>
-                {member.user.name?.charAt(0).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            <p className="text-2xl font-bold"># {member.user.name}</p>
-          </div>
-          <p className="text-muted-foreground mb-4 font-normal">
-            This conversation is just between you and{" "}
-            <strong>{member.user.name}</strong>
-          </p>
-        </div>
-      )}
+      <MessageListHeader variant={variant} channel={channel} member={member} />
     </div>
   )
+}
+
+function DateSeparator({ date }: { date: string }) {
+  return (
+    <div className="relative my-2 text-center">
+      <hr className="absolute top-1/2 right-0 left-0 border-t" />
+      <span className="bg-muted relative inline-block rounded-full border px-4 py-1 text-xs shadow-sm">
+        {date}
+      </span>
+    </div>
+  )
+}
+
+function LoadingMoreIndicator() {
+  return (
+    <div className="relative my-2 text-center">
+      <hr className="absolute top-1/2 right-0 left-0 border-t" />
+      <span className="bg-muted relative inline-block rounded-full border px-4 py-1 text-xs shadow-sm">
+        <Loader className="size-4 animate-spin" />
+      </span>
+    </div>
+  )
+}
+
+function MessageListHeader({ variant, channel, member }: MessageHeaderProps) {
+  if (variant === "channel" && channel) {
+    return <ChannelHeader channel={channel} />
+  }
+
+  if (variant === "direct" && member) {
+    return <DirectMessageHeader member={member} />
+  }
+
+  return null
+}
+
+function ChannelHeader({ channel }: { channel: Doc<"channel"> }) {
+  const channelCreatedDate = dayjs(channel._creationTime).format("MMMM D, YYYY")
+
+  return (
+    <div className="mx-5 mb-4 pt-20">
+      <p className="mb-2 flex items-center text-2xl font-bold">
+        # {channel.name}
+      </p>
+      <p className="text-muted-foreground pb-4 font-normal">
+        This channel was created on {channelCreatedDate}. This is the very
+        beginning of the <strong>{channel.name}</strong> channel.
+      </p>
+    </div>
+  )
+}
+
+function DirectMessageHeader({
+  member,
+}: {
+  member: Doc<"workspaceMember"> & { user: Doc<"users"> }
+}) {
+  const userName = member.user.name || "Unknown User"
+  const userImage = member.user.image
+  const userInitial = userName.charAt(0).toUpperCase()
+
+  return (
+    <div className="mx-5 mb-4 pt-20">
+      <div className="mb-2 flex items-center gap-x-1">
+        <Avatar className="mr-2 size-14">
+          <AvatarImage src={userImage} alt={`${userName} avatar`} />
+          <AvatarFallback>{userInitial}</AvatarFallback>
+        </Avatar>
+        <p className="text-2xl font-bold">{userName}</p>
+      </div>
+      <p className="text-muted-foreground mb-4 font-normal">
+        This conversation is just between you and <strong>{userName}</strong>
+      </p>
+    </div>
+  )
+}
+
+function shouldMessageBeCompact(
+  currentMessage: MessageListProps["messages"][number],
+  subsequentMessage: MessageListProps["messages"][number]
+): boolean {
+  if (!subsequentMessage) return false
+
+  const isSameAuthor = subsequentMessage.memberId === currentMessage.memberId
+  const timeDifference = dayjs(currentMessage._creationTime).diff(
+    subsequentMessage._creationTime,
+    "minute"
+  )
+
+  return isSameAuthor && timeDifference < MESSAGE_COMPACT_TIME_WINDOW_MINUTES
 }

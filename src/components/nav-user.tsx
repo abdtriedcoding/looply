@@ -21,6 +21,7 @@ import {
 import { DeleteWorkspaceModal } from "@/features/workspaces/components/delete-workspace-modal"
 import { EditWorkspaceModal } from "@/features/workspaces/components/edit-workspace-modal"
 import { InviteWorkspaceModal } from "@/features/workspaces/components/invite-workspace-modal"
+import { WorkspaceModalType } from "@/features/workspaces/types"
 
 import { Doc } from "../../convex/_generated/dataModel"
 
@@ -30,12 +31,12 @@ interface NavUserMenuProps {
   isAdmin: boolean
 }
 
-type ModalType = "edit" | "delete" | "invite" | null
-
 export function NavUser({ workspace, user, isAdmin }: NavUserMenuProps) {
   const router = useRouter()
   const { signOut } = useAuthActions()
-  const [activeModal, setActiveModal] = useState<ModalType>(null)
+  const [activeModal, setActiveModal] = useState<WorkspaceModalType | null>(
+    null
+  )
 
   const handleLogout = async () => {
     try {
@@ -83,7 +84,7 @@ export function NavUser({ workspace, user, isAdmin }: NavUserMenuProps) {
 
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
-            <DropdownMenuItem onClick={() => setActiveModal("invite")}>
+            <DropdownMenuItem onClick={() => setActiveModal("inviteWorkspace")}>
               <Sparkles className="mr-2 size-4" />
               Invite to workspace
             </DropdownMenuItem>
@@ -93,11 +94,15 @@ export function NavUser({ workspace, user, isAdmin }: NavUserMenuProps) {
             <>
               <DropdownMenuSeparator />
               <DropdownMenuGroup>
-                <DropdownMenuItem onClick={() => setActiveModal("edit")}>
+                <DropdownMenuItem
+                  onClick={() => setActiveModal("editWorkspace")}
+                >
                   <BadgeCheck className="mr-2 size-4" />
                   Edit Workspace
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setActiveModal("delete")}>
+                <DropdownMenuItem
+                  onClick={() => setActiveModal("deleteWorkspace")}
+                >
                   <Trash className="mr-2 size-4" />
                   Delete Workspace
                 </DropdownMenuItem>
@@ -114,23 +119,23 @@ export function NavUser({ workspace, user, isAdmin }: NavUserMenuProps) {
       </DropdownMenu>
 
       <EditWorkspaceModal
-        open={activeModal === "edit"}
+        open={activeModal === "editWorkspace"}
         onOpenChange={(open) =>
-          open ? setActiveModal("edit") : setActiveModal(null)
+          open ? setActiveModal("editWorkspace") : setActiveModal(null)
         }
         workspace={workspace}
       />
       <DeleteWorkspaceModal
-        open={activeModal === "delete"}
+        open={activeModal === "deleteWorkspace"}
         onOpenChange={(open) =>
-          open ? setActiveModal("delete") : setActiveModal(null)
+          open ? setActiveModal("deleteWorkspace") : setActiveModal(null)
         }
         workspace={workspace}
       />
       <InviteWorkspaceModal
-        open={activeModal === "invite"}
+        open={activeModal === "inviteWorkspace"}
         onOpenChange={(open) =>
-          open ? setActiveModal("invite") : setActiveModal(null)
+          open ? setActiveModal("inviteWorkspace") : setActiveModal(null)
         }
         workspace={workspace}
       />

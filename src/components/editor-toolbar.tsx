@@ -35,6 +35,7 @@ export function EditorToolbar({
   variant = "create",
   onCancel,
   onUpdate,
+  disabled,
 }: {
   editor: Editor
   handleSend: () => void
@@ -43,6 +44,7 @@ export function EditorToolbar({
   variant?: "create" | "edit"
   onCancel?: () => void
   onUpdate?: () => void
+  disabled?: boolean
 }) {
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false)
 
@@ -328,7 +330,9 @@ export function EditorToolbar({
           <Button
             size="sm"
             onClick={handleSend}
-            disabled={!editor.getText().trim() && uploadedFilesCount === 0}
+            disabled={
+              (!editor.getText().trim() && uploadedFilesCount === 0) || disabled
+            }
             className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-md px-4 py-2 disabled:opacity-50"
           >
             <Send className="mr-2 h-4 w-4" />
@@ -343,7 +347,7 @@ export function EditorToolbar({
             <Button
               size="sm"
               onClick={onUpdate}
-              disabled={!editor.getText().trim()}
+              disabled={!editor.getText().trim() || disabled}
             >
               <Send className="h-4 w-4" />
               Save

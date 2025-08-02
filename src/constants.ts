@@ -7,6 +7,13 @@ export const COPY_STATUS_TIMEOUT = 2000
 
 export const JOIN_CODE_LENGTH = 6
 
+export const LOAD_MORE_BATCH_SIZE = 20
+
+export const COMPACT_TIME_FORMAT = "hh:mm"
+export const FULL_TIME_FORMAT = "h:mm a"
+
+export const INTERSECTION_THRESHOLD = 1.0
+
 export const JOIN_CODE_PATTERN = REGEXP_ONLY_DIGITS_AND_CHARS
 
 export const ROLE = {
